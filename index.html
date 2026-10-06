@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ADB 抓取日志教程</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f5f5f5;
+    color: #333;
+    line-height: 1.7;
+    padding: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  h1 {
+    text-align: center;
+    color: #2c3e50;
+    border-bottom: 3px solid #3498db;
+    padding-bottom: 15px;
+  }
+  .card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 15px 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  }
+  .card h2 {
+    margin-top: 0;
+    color: #2c3e50;
+    border-left: 4px solid #3498db;
+    padding-left: 12px;
+  }
+  .card a {
+    display: inline-block;
+    background: #3498db;
+    color: white;
+    padding: 8px 18px;
+    border-radius: 4px;
+    text-decoration: none;
+    margin-top: 8px;
+    font-weight: bold;
+  }
+  .card a:hover {
+    background: #2980b9;
+  }
+  .card p {
+    color: #555;
+    margin: 8px 0;
+  }
+  .badge {
+    display: inline-block;
+    background: #f39c12;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    margin-left: 8px;
+  }
+</style>
+</head>
+<body>
+
+<h1>ADB 抓取日志完整教程</h1>
+
+<p style="text-align:center; color:#7f8c8d;">
+三种方案，根据你的手机型号和场景选择
+</p>
+
+<div class="card">
+  <h2>方案一：电脑 USB 抓取 <span class="badge">最通用</span></h2>
+  <p><b>适用场景</b>：电脑 + 任意能 USB 调试的手机</p>
+  <p><b>系统要求</b>：鸿蒙 2/3/4.x、Android 5+ 任意版本</p>
+  <p><b>特点</b>：全程插 USB，最稳定，适合一次性抓取</p>
+  <a href="方案一-电脑USB抓取日志-完整步骤.html">查看完整步骤 →</a>
+</div>
+
+<div class="card">
+  <h2>方案二：鸿蒙手机自抓自</h2>
+  <p><b>适用场景</b>：华为 / 荣耀手机（鸿蒙系统）</p>
+  <p><b>系统要求</b>：鸿蒙 2/3/4.x（AOSP 兼容版，非纯血鸿蒙7.0）</p>
+  <p><b>特点</b>：电脑激活一次 5555 端口后，断开 USB 用 Termux 抓，重启后需重新激活</p>
+  <a href="方案二-鸿蒙手机自抓自-完整步骤.html">查看完整步骤 →</a>
+</div>
+
+<div class="card">
+  <h2>方案三：原生安卓手机自抓自 <span class="badge">最省事</span></h2>
+  <p><b>适用场景</b>：小米 / OPPO / vivo / 三星 / 一加 等</p>
+  <p><b>系统要求</b>：Android 11+ 原生系统，支持「无线调试」</p>
+  <p><b>特点</b>：自带无线调试，全程不用电脑，重启后直接重连</p>
+  <a href="方案三-原生安卓手机自抓自-完整步骤.html">查看完整步骤 →</a>
+</div>
+
+<h2 style="margin-top:40px;">三套方案对比</h2>
+<table style="width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden;">
+  <tr style="background:#34495e; color:white;">
+    <th style="padding:12px; text-align:left;">方案</th>
+    <th style="padding:12px; text-align:left;">适用机型</th>
+    <th style="padding:12px; text-align:left;">需要电脑</th>
+    <th style="padding:12px; text-align:left;">重启后</th>
+  </tr>
+  <tr style="border-bottom:1px solid #ecf0f1;">
+    <td style="padding:12px;">方案一</td>
+    <td style="padding:12px;">任意能 USB 调试</td>
+    <td style="padding:12px;">✅ 必须</td>
+    <td style="padding:12px;">重插 USB</td>
+  </tr>
+  <tr style="border-bottom:1px solid #ecf0f1;">
+    <td style="padding:12px;">方案二</td>
+    <td style="padding:12px;">鸿蒙 2/3/4.x</td>
+    <td style="padding:12px;">⚠️ 仅激活一次</td>
+    <td style="padding:12px;">必须回电脑激活</td>
+  </tr>
+  <tr>
+    <td style="padding:12px;">方案三</td>
+    <td style="padding:12px;">Android 11+</td>
+    <td style="padding:12px;">❌ 不用</td>
+    <td style="padding:12px;">直接重连</td>
+  </tr>
+</table>
+
+<p style="text-align:center; color:#95a5a6; margin-top:40px;">
+仓库地址：<a href="https://github.com/doctorstrange1122/adb-log-tutorial">github.com/doctorstrange1122/adb-log-tutorial</a>
+</p>
+
+</body>
+</html>
