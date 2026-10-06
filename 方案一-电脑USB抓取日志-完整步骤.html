@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>方案一 - 电脑USB抓取日志（完整步骤）</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f5f5f5;
+    color: #333;
+    line-height: 1.7;
+    padding: 20px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  h1 {
+    text-align: center;
+    color: #2c3e50;
+    border-bottom: 3px solid #3498db;
+    padding-bottom: 15px;
+  }
+  h2 {
+    color: #2c3e50;
+    background: #ecf0f1;
+    padding: 12px 18px;
+    border-left: 5px solid #3498db;
+    margin-top: 40px;
+    border-radius: 4px;
+  }
+  h3 {
+    color: #34495e;
+    margin-top: 25px;
+    padding-left: 10px;
+    border-left: 3px solid #95a5a6;
+  }
+  p {
+    margin: 10px 0;
+  }
+  ul, ol {
+    margin: 10px 0;
+    padding-left: 25px;
+  }
+  li {
+    margin: 5px 0;
+  }
+  .code-block {
+    background: #2d2d2d;
+    color: #ff6b6b;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-family: "Consolas", "Monaco", "Courier New", monospace;
+    font-size: 14px;
+    margin: 10px 0;
+    cursor: pointer;
+    position: relative;
+    border-left: 4px solid #ff6b6b;
+    transition: background 0.2s;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .code-block:hover {
+    background: #3a3a3a;
+  }
+  .code-block::after {
+    content: "点击复制";
+    position: absolute;
+    right: 10px;
+    top: 8px;
+    color: #95a5a6;
+    font-size: 12px;
+    font-family: sans-serif;
+  }
+  .code-block.copied::after {
+    content: "已复制 ✓";
+    color: #2ecc71;
+  }
+  .note {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 10px 15px;
+    margin: 10px 0;
+    border-radius: 4px;
+  }
+  .tip {
+    background: #d4edda;
+    border-left: 4px solid #28a745;
+    padding: 10px 15px;
+    margin: 10px 0;
+    border-radius: 4px;
+  }
+  .warn {
+    background: #f8d7da;
+    border-left: 4px solid #dc3545;
+    padding: 10px 15px;
+    margin: 10px 0;
+    border-radius: 4px;
+  }
+  a {
+    color: #3498db;
+    word-break: break-all;
+  }
+  code {
+    background: #f4f4f4;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: "Consolas", monospace;
+    color: #c7254e;
+  }
+</style>
+</head>
+<body>
+
+<h1>ADB 抓取淘宝日志 - 完整操作步骤</h1>
+
+<p style="text-align:center; color:#7f8c8d;">
+适用：电脑 USB 连接手机，抓取淘宝 App 加载链接与 sceneId / deliveryId 参数<br>
+环境：Windows 系统 + 鸿蒙 2/3/4.x 手机（AOSP 兼容版）
+</p>
+
+<h2>一、下载安装 ADB 工具</h2>
+
+<h3>渠道一：Android 官网（推荐）</h3>
+<p>浏览器打开：</p>
+<div class="code-block" onclick="copyCode(this)">https://developer.android.google.cn/tools/releases/platform-tools</div>
+<p>页面找到「Download SDK Platform-Tools for Windows」，点击下载。</p>
+
+<h3>渠道二：Google 直链下载</h3>
+<div class="code-block" onclick="copyCode(this)">https://dl.google.com/android/repository/platform-tools-latest-windows.zip</div>
+
+<h3>渠道三：国内镜像（清华）</h3>
+<div class="code-block" onclick="copyCode(this)">https://mirrors.tuna.tsinghua.edu.cn/AOSP/platform-tools/</div>
+<p>找到最新的 <code>platform-tools-windows.zip</code>，下载后解压到 <code>E:\adb</code> 目录。</p>
+
+<div class="tip">
+<b>解压目录约定</b>：统一解压到 <code>E:\adb</code>，解压后路径应为 <code>E:\adb\platform-tools\adb.exe</code>，但本教程命令直接用 <code>E:\adb\adb.exe</code>（建议把 platform-tools 里的 adb.exe 复制一份到 <code>E:\adb\</code> 根目录，方便调用）。
+</div>
+
+<h2>二、手机开启 USB 调试</h2>
+
+<ol>
+  <li>设置 → 关于手机 → 连点版本号 7 次（开启开发者模式）</li>
+  <li>设置 → 系统和更新 → 开发人员选项</li>
+  <li>开启「USB调试」</li>
+  <li>数据线连电脑（选「传输文件 / MTP」模式，不要选仅充电）</li>
+  <li>手机弹窗「是否允许 USB 调试」→ 勾「一律允许」→ 点允许</li>
+</ol>
+
+<h2>三、正式抓取完整步骤</h2>
+
+<h3>1. 验证设备连接</h3>
+<p>电脑 cmd 执行：</p>
+<div class="code-block" onclick="copyCode(this)">E:\adb\adb.exe devices</div>
+<p>看到类似下面的输出表示连上了：</p>
+<div class="code-block" onclick="copyCode(this)">List of devices attached
+xxxxxxxx        device</div>
+
+<h3>2. 清空旧日志</h3>
+<p>清掉缓冲区，避免抓到无关旧日志：</p>
+<div class="code-block" onclick="copyCode(this)">E:\adb\adb.exe logcat -c</div>
+
+<h3>3. 开始抓取（按需选一种）</h3>
+
+<p><b>方式 A：HTTP 通用过滤（推荐先试这个）</b></p>
+<div class="code-block" onclick="copyCode(this)">E:\adb\adb.exe logcat -v time | findstr /i "http"</div>
+
+<p><b>方式 B：淘宝专用过滤（抓 sceneId / deliveryId）</b></p>
+<div class="code-block" onclick="copyCode(this)">E:\adb\adb.exe logcat -v time | findstr /i "taobao tb.cn pages.m item.htm sceneId deliveryId"</div>
+
+<p><b>方式 C：全部日志存文件（不过滤，事后 grep）</b></p>
+<div class="code-block" onclick="copyCode(this)">E:\adb\adb.exe logcat -v time > E:\taobao-crawler\adb-log.txt</div>
+
+<div class="note">
+<b>目录需提前建好</b>：方式 C 输出到 <code>E:\taobao-crawler\</code>，先在 cmd 跑 <code>mkdir E:\taobao-crawler</code> 建目录，否则会报错。
+</div>
+
+<h3>4. 在手机上操作（任意按钮或页面）</h3>
+<ul>
+  <li>打开目标 App（淘宝 / 天猫 / 任意应用）</li>
+  <li>点击<b>任意想要抓取的按钮或页面</b>（如「领红包下单」「芭芭农场」「任务」等）</li>
+  <li>每点一次，cmd 窗口会实时滚出对应的 URL 和参数</li>
+  <li>需要抓多个按钮，就依次点击；每个按钮的加载链接都会单独出现在日志里</li>
+</ul>
+
+<h3>5. 停止抓取</h3>
+<p>cmd 窗口按 <code>Ctrl+C</code> 停止。</p>
+
+<h3>6. 查找 spmb 链接（图形界面方式）</h3>
+
+<p>如果用的是<b>方式 C（保存到文件）</b>，按下面步骤：</p>
+
+<p><b>① 打开日志文件</b></p>
+<p>打开文件夹 <code>E:\taobao-crawler\</code>，找到 <code>adb-log.txt</code>，双击用记事本打开。</p>
+<div class="code-block" onclick="copyCode(this)">notepad E:\taobao-crawler\adb-log.txt</div>
+<p>（或者在 cmd 里直接执行上面这条命令打开）</p>
+
+<p><b>② 调出查找</b></p>
+<p>记事本打开后，按快捷键 <code>Ctrl+F</code>（或菜单「编辑 → 查找」），弹出查找框。</p>
+
+<p><b>③ 输入关键词</b></p>
+<p>查找内容输入：</p>
+<div class="code-block" onclick="copyCode(this)">spmb</div>
+
+<p><b>④ 反复点「查找下一个」</b></p>
+<ul>
+  <li>点一次「查找下一个」→ 跳到第一个包含 spmb 的位置</li>
+  <li>继续点「查找下一个」→ 依次跳到第 2、3、4……个</li>
+  <li>一直点，直到提示「找不到」为止</li>
+  <li>提示找不到时，光标停的位置就是<b>最后一个包含 spmb 的链接</b></li>
+</ul>
+
+<div class="tip">
+<b>关键操作</b>：当记事本提示「找不到 "spmb"」时，说明已经查找到末尾，<b>当前停留在屏幕上的那行就是最后一个含 spmb 的链接</b>。整行复制下来即可。
+</div>
+
+<p><b>⑤ 复制目标链接</b></p>
+<p>找到最后一行后，整行选中 → <code>Ctrl+C</code> 复制，这就是你要的链接。</p>
+
+<div class="note">
+<b>注意</b>：spmb 是淘宝的 SPM 埋点参数（页面追踪 ID），通常出现在 URL 的 <code>&spmb=</code> 或 <code>?spmb=</code> 里。例如：
+<code>https://pages-fast.m.taobao.com/...?...&spmb=46023237&...</code>
+</div>
+
+<h2>四、抓完后查找关键参数（cmd 命令行方式）</h2>
+
+<p>方式 C 存文件后，在 cmd 里查找 sceneId / deliveryId：</p>
+<div class="code-block" onclick="copyCode(this)">findstr /i "sceneId deliveryId" E:\taobao-crawler\adb-log.txt</div>
+
+<p>查找 pages-fast 类 URL：</p>
+<div class="code-block" onclick="copyCode(this)">findstr /i "pages-fast.m.taobao.com" E:\taobao-crawler\adb-log.txt</div>
+
+<p>查找 spmb 关键词（命令行方式）：</p>
+<div class="code-block" onclick="copyCode(this)">findstr /i "spmb" E:\taobao-crawler\adb-log.txt</div>
+
+<p>把结果导出到单独文件方便查看：</p>
+<div class="code-block" onclick="copyCode(this)">findstr /i "sceneId deliveryId spmb" E:\taobao-crawler\adb-log.txt > E:\taobao-crawler\scene-id.txt</div>
+
+<p>用记事本打开结果文件：</p>
+<div class="code-block" onclick="copyCode(this)">notepad E:\taobao-crawler\scene-id.txt</div>
+
+<h2>五、常见问题</h2>
+
+<p><b>Q: adb devices 显示 unauthorized？</b><br>
+A: 手机屏幕解锁，看有没有弹授权窗。没弹就去 设置→开发人员选项→撤销USB调试授权，重新插 USB。</p>
+
+<p><b>Q: adb devices 列表是空的？</b><br>
+A: 1) 检查 USB 模式是不是「传输文件」<br>
+2) 换数据线（很多线只能充电）<br>
+3) 换 USB 口</p>
+
+<p><b>Q: 'findstr' 不是内部或外部命令？</b><br>
+A: 你在 PowerShell 里跑的，换 cmd 即可。开始菜单搜「cmd」打开。</p>
+
+<p><b>Q: 抓不到淘宝相关日志？</b><br>
+A: 1) 确认手机系统是鸿蒙 2/3/4.x（AOSP 兼容版）<br>
+2) 鸿蒙 7.0（纯血）没有 logcat，需用 hdc<br>
+3) 操作淘宝时 cmd 窗口保持开启，别关掉</p>
+
+<p><b>Q: cmd 一闪就关了？</b><br>
+A: 别双击 cmd 启动，开始菜单搜「cmd」→ 回车打开，再 cd 到对应目录。</p>
+
+<h2>六、目标链接示例（参考）</h2>
+
+<p>抓到的目标 URL 大致长这样，里面就有 sceneId 和 deliveryId：</p>
+<div class="code-block" onclick="copyCode(this)">https://pages-fast.m.taobao.com/wow/z/app/ltao-fe/tbms-cooperation/home?ut_sk=...&deliveryId=75085&...&sceneId=7980&...</div>
+
+<h2>关键提示</h2>
+
+<ul>
+  <li>抓取期间手机别熄屏太久（Wi-Fi 可能断）</li>
+  <li>每点一次按钮，cmd 会实时输出，盯着窗口看</li>
+  <li>方式 C 最稳，事后用 findstr 检索</li>
+  <li>抓完日志文件可能很大（几十 MB），用 findstr 过滤后只剩几 KB</li>
+  <li>sceneId / deliveryId 是活动 ID，每次活动不同</li>
+</ul>
+
+<script>
+function copyCode(element) {
+  const text = element.textContent.replace(/点击复制|已复制 ✓/g, '').trim();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      element.classList.add('copied');
+      setTimeout(() => { element.classList.remove('copied'); }, 1500);
+    }).catch(() => { fallbackCopy(element, text); });
+  } else {
+    fallbackCopy(element, text);
+  }
+}
+function fallbackCopy(element, text) {
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+  try {
+    document.execCommand('copy');
+    element.classList.add('copied');
+    setTimeout(() => { element.classList.remove('copied'); }, 1500);
+  } catch (e) {}
+  document.body.removeChild(textarea);
+}
+</script>
+
+</body>
+</html>
