@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>方案三 - 原生安卓手机自抓自（完整步骤）</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f5f5f5;
+    color: #333;
+    line-height: 1.7;
+    padding: 20px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  h1 {
+    text-align: center;
+    color: #2c3e50;
+    border-bottom: 3px solid #3498db;
+    padding-bottom: 15px;
+  }
+  h2 {
+    color: #2c3e50;
+    background: #ecf0f1;
+    padding: 12px 18px;
+    border-left: 5px solid #3498db;
+    margin-top: 40px;
+    border-radius: 4px;
+  }
+  h3 {
+    color: #34495e;
+    margin-top: 25px;
+    padding-left: 10px;
+    border-left: 3px solid #95a5a6;
+  }
+  p {
+    margin: 10px 0;
+  }
+  ul, ol {
+    margin: 10px 0;
+    padding-left: 25px;
+  }
+  li {
+    margin: 5px 0;
+  }
+  .code-block {
+    background: #2d2d2d;
+    color: #ff6b6b;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-family: "Consolas", "Monaco", "Courier New", monospace;
+    font-size: 14px;
+    margin: 10px 0;
+    cursor: pointer;
+    position: relative;
+    border-left: 4px solid #ff6b6b;
+    transition: background 0.2s;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .code-block:hover {
+    background: #3a3a3a;
+  }
+  .code-block::after {
+    content: "点击复制";
+    position: absolute;
+    right: 10px;
+    top: 8px;
+    color: #95a5a6;
+    font-size: 12px;
+    font-family: sans-serif;
+  }
+  .code-block.copied::after {
+    content: "已复制 ✓";
+    color: #2ecc71;
+  }
+  .note {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 10px 15px;
+    margin: 10px 0;
+    border-radius: 4px;
+  }
+  .tip {
+    background: #d4edda;
+    border-left: 4px solid #28a745;
+    padding: 10px 15px;
+    margin: 10px 0;
+    border-radius: 4px;
+  }
+  .warn {
+    background: #f8d7da;
+    border-left: 4px solid #dc3545;
+    padding: 10px 15px;
+    margin: 10px 0;
+    border-radius: 4px;
+  }
+  a {
+    color: #3498db;
+    word-break: break-all;
+  }
+  code {
+    background: #f4f4f4;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: "Consolas", monospace;
+    color: #c7254e;
+  }
+</style>
+</head>
+<body>
+
+<h1>原生安卓手机自己抓自己日志 - 完整步骤</h1>
+
+<p style="text-align:center; color:#7f8c8d;">
+适用：原生安卓 / 小米 / OPPO / vivo / 三星 / 一加 等支持「无线调试」的 Android 11+ 手机<br>
+原理：手机自带无线调试功能，Termux 直接 adb connect 自己 IP 抓 logcat，<b>全程不用电脑</b>
+</p>
+
+<div class="tip">
+<b>核心优势</b>：相比华为/荣耀鸿蒙方案，原生安卓手机自带无线调试，<b>不需要电脑 USB 激活</b>，重启后也能直接连，更省事。
+</div>
+
+<h2>一、首次设置（每台手机做一次）</h2>
+
+<h3>1. 开启开发者选项</h3>
+<ol>
+  <li>设置 → 关于手机（或 我的设备）</li>
+  <li>找到「版本号」（MIUI / ColorOS / OriginOS 等可能在不同位置）</li>
+  <li>连点 7 次，提示「您已处于开发者模式」</li>
+</ol>
+
+<h3>2. 开启无线调试</h3>
+<ol>
+  <li>设置 → 系统 → 开发者选项（部分机型在 设置 → 更多设置 → 开发者选项）</li>
+  <li>找到「无线调试」开关，<b>打开它</b></li>
+  <li>弹窗点「允许」</li>
+</ol>
+
+<div class="warn">
+<b>关键区别</b>：原生安卓 11+ 才有「无线调试」开关。如果开发者选项里找不到，说明系统版本低于 Android 11，或厂商裁了（华为/荣耀就没有）。可以先看 设置 → 关于手机 → Android 版本。
+</div>
+
+<h3>3. 配对一次（拿到配对码）</h3>
+<ol>
+  <li>点击「无线调试」进入详情页</li>
+  <li>点「使用配对码配对设备」</li>
+  <li>屏幕显示：<b>配对码（6位数字）</b>、Wi-Fi 配对端口（如 43211）</li>
+  <li>记下这两个数，待会用</li>
+</ol>
+
+<h3>4. 装 Termux</h3>
+<p>应用市场搜 <code>Termux</code> 安装（建议装 F-Droid 版本，权限更全）。</p>
+
+<h3>5. Termux 装工具</h3>
+<p>在 Termux 里执行：</p>
+<div class="code-block" onclick="copyCode(this)">pkg install android-tools -y</div>
+
+<h3>6. 查手机 IP</h3>
+<p>在「无线调试」详情页顶部能看到 IP 和端口，例如 <code>192.168.1.108:43211</code>。</p>
+<p>或在 Termux 里查：</p>
+<div class="code-block" onclick="copyCode(this)">ip addr show wlan0 | grep inet</div>
+<p>输出里 <code>inet 192.168.x.x</code> 就是本机 IP。</p>
+
+<h3>7. Termux 加电池白名单</h3>
+<p>设置 → 应用 → Termux → 电池 → 无限制<br>
+设置 → 电池 → 后台管理 → Termux → 不限制（或常驻后台）</p>
+
+<h2>二、首次配对（只做一次）</h2>
+
+<div class="warn">
+<b>注意</b>：第一次连接需要配对，之后就不用配对了，只用 <code>adb connect</code> 就行。
+</div>
+
+<h3>8. 配对设备</h3>
+<p>Termux 里执行（IP 和端口换成「无线调试」详情页显示的）：</p>
+<div class="code-block" onclick="copyCode(this)">adb pair 192.168.1.108:43211</div>
+<p>提示输入配对码时，输入刚才看到的 6 位数字，回车。</p>
+<p>看到 <code>Successfully paired to ...</code> 就配对成功。</p>
+
+<h2>三、每次抓日志（重复执行）</h2>
+
+<h3>9. 开 Termux，加锁防挂</h3>
+<div class="code-block" onclick="copyCode(this)">termux-wake-lock</div>
+
+<h3>10. 连接自己</h3>
+<p>（注意：这里是<b>连接端口</b>，不是配对端口；无线调试详情页会同时显示两个端口，连接用大端口的那个，通常是 <code>:5555</code> 或 <code>:xxxxx</code>）</p>
+<div class="code-block" onclick="copyCode(this)">adb connect 192.168.1.108:5555</div>
+
+<h3>11. 验证</h3>
+<div class="code-block" onclick="copyCode(this)">adb devices</div>
+<p>看到 <code>192.168.1.108:5555  device</code> 即可。</p>
+
+<h3>12. 设默认设备 + 清旧日志</h3>
+<p>① 设默认设备</p>
+<div class="code-block" onclick="copyCode(this)">export ANDROID_SERIAL=192.168.1.108:5555</div>
+<p>② 清空旧日志</p>
+<div class="code-block" onclick="copyCode(this)">adb logcat -c</div>
+
+<h3>13. 后台存文件</h3>
+<div class="code-block" onclick="copyCode(this)">adb logcat -v time > ~/taobao-log.txt &</div>
+
+<h3>14. 实时过滤显示</h3>
+<div class="code-block" onclick="copyCode(this)">adb logcat -v time | grep -i "taobao\|sceneId\|deliveryId\|loadUrl\|startApp\|spmb"</div>
+
+<h3>15. 在手机上操作（任意按钮或页面）</h3>
+<ul>
+  <li>打开目标 App（淘宝 / 天猫 / 任意应用）</li>
+  <li>点击<b>任意想要抓取的按钮或页面</b>（如「领红包下单」「芭芭农场」「任务」等）</li>
+  <li>每点一次，Termux 会实时滚出对应的 URL 和参数</li>
+  <li>需要抓多个按钮，就依次点击；每个按钮的加载链接都会单独出现在日志里</li>
+</ul>
+
+<h3>16. 停止抓取</h3>
+<p>Termux 里按 <code>Ctrl+C</code></p>
+
+<h3>17. 查文件抓到啥（命令行方式）</h3>
+<p>查找 sceneId / deliveryId / pages-fast：</p>
+<div class="code-block" onclick="copyCode(this)">grep -i "sceneId\|deliveryId\|pages-fast" ~/taobao-log.txt</div>
+
+<p>查找 spmb 关键词：</p>
+<div class="code-block" onclick="copyCode(this)">grep -i "spmb" ~/taobao-log.txt</div>
+
+<p>查找结果导出到单独文件：</p>
+<div class="code-block" onclick="copyCode(this)">grep -i "sceneId\|deliveryId\|spmb" ~/taobao-log.txt > ~/scene-id.txt</div>
+
+<h3>18. 查找最后一个 spmb 链接（nano 编辑器方式）</h3>
+
+<p>用 Termux 内置编辑器打开日志：</p>
+<div class="code-block" onclick="copyCode(this)">nano ~/taobao-log.txt</div>
+
+<p>在 nano 里查找 spmb：</p>
+<ul>
+  <li>按 <code>Ctrl+W</code>（搜索快捷键）</li>
+  <li>输入：<code>spmb</code></li>
+  <li>按回车 → 跳到第一个匹配位置</li>
+  <li>继续按 <code>Ctrl+W</code> → 直接回车 → 跳到下一个</li>
+  <li>重复操作，直到提示「not found」为止</li>
+  <li>提示「not found」时，光标停的位置就是<b>最后一个含 spmb 的链接</b></li>
+</ul>
+
+<div class="tip">
+<b>关键操作</b>：当 nano 提示「[ "spmb" not found ]」时，说明已到末尾，<b>当前光标所在的行就是最后一个含 spmb 的链接</b>。整行复制即可。
+</div>
+
+<p>退出 nano：<code>Ctrl+X</code></p>
+
+<h3>19. 用手机文本编辑器查看（推荐，更直观）</h3>
+
+<p>把日志文件复制到手机能访问的目录：</p>
+<div class="code-block" onclick="copyCode(this)">cp ~/taobao-log.txt /sdcard/taobao-log.txt</div>
+
+<p>然后用手机文件管理器或文本编辑器打开：</p>
+<ul>
+  <li>文件管理器 → 内部存储 → 找到 <code>taobao-log.txt</code></li>
+  <li>长按 → 用文本编辑器打开（推荐 WPS、QuickEdit、MT 管理器）</li>
+  <li>用编辑器的「查找」功能搜 <code>spmb</code></li>
+  <li>反复点「下一个」→ 最后一个就是目标链接</li>
+</ul>
+
+<div class="note">
+<b>注意</b>：spmb 是淘宝 SPM 埋点参数（页面追踪 ID），通常出现在 URL 的 <code>&spmb=</code> 或 <code>?spmb=</code> 里。例如：
+<code>https://pages-fast.m.taobao.com/...?...&spmb=46023237&...</code>
+</div>
+
+<h2>四、Termux 被杀后再开</h2>
+<p>逐条执行：</p>
+<div class="code-block" onclick="copyCode(this)">termux-wake-lock</div>
+<div class="code-block" onclick="copyCode(this)">adb connect 192.168.1.108:5555</div>
+<div class="code-block" onclick="copyCode(this)">export ANDROID_SERIAL=192.168.1.108:5555</div>
+<div class="code-block" onclick="copyCode(this)">adb logcat -c</div>
+<div class="code-block" onclick="copyCode(this)">adb logcat -v time | grep -i "taobao\|sceneId\|deliveryId\|spmb"</div>
+
+<h2>五、手机重启后（无需电脑）</h2>
+
+<div class="tip">
+<b>原生安卓优势</b>：无线调试开关只要不关，重启后端口还会监听，<b>不用回电脑</b>。
+</div>
+
+<p>重启后检查：</p>
+<ul>
+  <li>设置 → 开发者选项 → 确认「无线调试」还是开启状态</li>
+  <li>如果关了，重新打开</li>
+  <li>Termux 里重新 <code>adb connect</code> 即可</li>
+</ul>
+
+<h2>关键提示</h2>
+<ul>
+  <li>IP 换成自己的（每台手机不一样）</li>
+  <li>无线调试开关别关，关了就要重新配对</li>
+  <li>Termux 别被杀，加电池白名单 + <code>termux-wake-lock</code></li>
+  <li>配对端口和连接端口不一样：配对用小端口（43211 等），连接用 5555</li>
+  <li>重启后 IP 可能变化，重新查一次</li>
+</ul>
+
+<h2>常见问题</h2>
+
+<p><b>Q: 找不到「无线调试」开关？</b><br>
+A: 1) 系统低于 Android 11，先升级<br>
+2) 厂商裁了（华为/荣耀全系没有）<br>
+3) 开发者选项没开启，先点 7 次版本号</p>
+
+<p><b>Q: adb pair 提示 cannot connect？</b><br>
+A: 1) 配对端口错了，确认是详情页「使用配对码配对」里显示的端口<br>
+2) 配对码过期，重新生成一个<br>
+3) 手机和 Termux 必须是<b>同一台手机</b>（自抓自）或同一 Wi-Fi</p>
+
+<p><b>Q: adb connect 提示 Connection refused？</b><br>
+A: 1) 无线调试开关被关了，重新开<br>
+2) 端口错了，无线调试详情页看连接端口（一般是 5555）<br>
+3) 手机熄屏太久 Wi-Fi 断了，亮屏重连</p>
+
+<p><b>Q: adb devices 提示 unauthorized？</b><br>
+A: 第一次连接会有弹窗，勾「一律允许」→ 允许。配对过的就不会再弹。</p>
+
+<p><b>Q: 抓不到淘宝日志？</b><br>
+A: 1) 确认开发者选项里「日志记录器缓冲区大小」不是关闭<br>
+2) 部分机型要开「USB 调试（安全设置）」才能读 logcat<br>
+3) MIUI 要在「开发者选项 → USB 调试（安全设置）」里允许 ADB 调试</p>
+
+<p><b>Q: 配对码过期怎么办？</b><br>
+A: 配对码是一次性的，过了就重新点「使用配对码配对」生成新的。配对成功后这个码就不用了。</p>
+
+<h2>三套方案对比</h2>
+
+| 方案 | 适用机型 | 是否需要电脑 | 重启后 |
+|------|---------|------------|--------|
+| <b>方案一：华为鸿蒙</b> | 鸿蒙 2/3/4.x（AOSP 兼容） | ✅ 必须 USB 激活 | 必须回电脑重新激活 |
+| <b>方案二：原生安卓</b>（本教程） | 小米/OPPO/vivo/三星 Android 11+ | ❌ 全程不用 | 直接重连即可 |
+| <b>方案三：电脑 USB 抓</b> | 任意能 USB 调试的手机 | ✅ 全程插电脑 | 重插 USB |
+
+<script>
+function copyCode(element) {
+  const text = element.textContent.replace(/点击复制|已复制 ✓/g, '').trim();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      element.classList.add('copied');
+      setTimeout(() => { element.classList.remove('copied'); }, 1500);
+    }).catch(() => { fallbackCopy(element, text); });
+  } else {
+    fallbackCopy(element, text);
+  }
+}
+function fallbackCopy(element, text) {
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+  try {
+    document.execCommand('copy');
+    element.classList.add('copied');
+    setTimeout(() => { element.classList.remove('copied'); }, 1500);
+  } catch (e) {}
+  document.body.removeChild(textarea);
+}
+</script>
+
+</body>
+</html>
