@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>方案二 - 鸿蒙手机自抓自（完整步骤）</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f5f5f5;
+    color: #333;
+    line-height: 1.7;
+    padding: 20px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  h1 {
+    text-align: center;
+    color: #2c3e50;
+    border-bottom: 3px solid #3498db;
+    padding-bottom: 15px;
+  }
+  h2 {
+    color: #2c3e50;
+    background: #ecf0f1;
+    padding: 12px 18px;
+    border-left: 5px solid #3498db;
+    margin-top: 40px;
+    border-radius: 4px;
+  }
+  h3 {
+    color: #34495e;
+    margin-top: 25px;
+    padding-left: 10px;
+    border-left: 3px solid #95a5a6;
+  }
+  p {
+    margin: 10px 0;
+  }
+  ul, ol {
+    margin: 10px 0;
+    padding-left: 25px;
+  }
+  li {
+    margin: 5px 0;
+  }
+  .code-block {
+    background: #2d2d2d;
+    color: #ff6b6b;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-family: "Consolas", "Monaco", "Courier New", monospace;
+    font-size: 14px;
+    margin: 10px 0;
+    cursor: pointer;
+    position: relative;
+    border-left: 4px solid #ff6b6b;
+    transition: background 0.2s;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .code-block:hover {
+    background: #3a3a3a;
+  }
+  .code-block::after {
+    content: "点击复制";
+    position: absolute;
+    right: 10px;
+    top: 8px;
+    color: #95a5a6;
+    font-size: 12px;
+    font-family: sans-serif;
+  }
+  .code-block.copied::after {
+    content: "已复制 ✓";
+    color: #2ecc71;
+  }
+  .note {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 10px 15px;
+    margin: 10px 0;
+    border-radius: 4px;
+  }
+  .tip {
+    background: #d4edda;
+    border-left: 4px solid #28a745;
+    padding: 10px 15px;
+    margin: 10px 0;
+    border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+
+<h1>手机端自己抓自己日志 - 完整步骤</h1>
+
+<p style="text-align:center; color:#7f8c8d;">
+适用：华为/荣耀等鸿蒙系统手机（AOSP 兼容版，非纯血鸿蒙7.0）<br>
+原理：电脑 USB 激活 5555 端口后，断开 USB，手机 Termux 连自己 IP 抓 logcat
+</p>
+
+<h2>一、首次设置（每台手机做一次）</h2>
+
+<h3>1. 电脑激活 5555 端口</h3>
+<p>电脑 cmd（USB 连手机）逐条执行（先跑①确认设备连上，再跑②）：</p>
+<p>① 确认设备（看到 <code>device</code> 字样才继续）</p>
+<div class="code-block" onclick="copyCode(this)">E:\adb\adb.exe devices</div>
+<p>② 切换到 TCP 模式</p>
+<div class="code-block" onclick="copyCode(this)">E:\adb\adb.exe tcpip 5555</div>
+
+<h3>2. 手机查 IP</h3>
+<p>设置 → 关于手机 → 状态信息 → IP 地址（例如 192.168.3.50，记下来）</p>
+
+<h3>3. 手机装 Termux</h3>
+<p>应用市场搜 Termux 安装</p>
+
+<h3>4. Termux 装工具</h3>
+<p>在 Termux 里执行：</p>
+<div class="code-block" onclick="copyCode(this)">pkg install android-tools -y</div>
+
+<h3>5. Termux 加电池白名单</h3>
+<p>设置 → 应用 → Termux → 电池 → 无限制</p>
+<p>设置 → 电池 → 启动管理 → Termux → 手动管理 → 三开关全开</p>
+
+<h2>二、每次抓日志（重复执行）</h2>
+
+<h3>6. 开 Termux，加锁防挂</h3>
+<div class="code-block" onclick="copyCode(this)">termux-wake-lock</div>
+
+<h3>7. 连接自己</h3>
+<p>把 192.168.3.50 换成自己的 IP：</p>
+<div class="code-block" onclick="copyCode(this)">adb connect 192.168.3.50:5555</div>
+
+<h3>8. 首次需授权（只弹一次）</h3>
+<p>看手机屏幕弹窗 → 勾「一律允许使用这台计算机进行调试」→ 点「允许」</p>
+
+<h3>9. 验证</h3>
+<div class="code-block" onclick="copyCode(this)">adb devices</div>
+<p>看到 <code>192.168.3.50:5555  device</code> 即可</p>
+
+<h3>10. 设默认设备 + 清旧日志</h3>
+<p>① 设默认设备</p>
+<div class="code-block" onclick="copyCode(this)">export ANDROID_SERIAL=192.168.3.50:5555</div>
+<p>② 清空旧日志</p>
+<div class="code-block" onclick="copyCode(this)">adb logcat -c</div>
+
+<h3>11. 后台存文件</h3>
+<div class="code-block" onclick="copyCode(this)">adb logcat -v time > ~/taobao-log.txt &</div>
+
+<h3>12. 实时过滤显示</h3>
+<div class="code-block" onclick="copyCode(this)">adb logcat -v time | grep -i "taobao\|sceneId\|deliveryId\|loadUrl\|startApp"</div>
+
+<h3>13. 在手机上操作（任意按钮或页面）</h3>
+<ul>
+  <li>打开目标 App（淘宝 / 天猫 / 任意应用）</li>
+  <li>点击<b>任意想要抓取的按钮或页面</b>（如「领红包下单」「芭芭农场」「任务」等）</li>
+  <li>每点一次，Termux 会实时滚出对应的 URL 和参数</li>
+  <li>需要抓多个按钮，就依次点击；每个按钮的加载链接都会单独出现在日志里</li>
+</ul>
+
+<h3>14. 停止抓取</h3>
+<p>Termux 里按 <code>Ctrl+C</code></p>
+
+<h3>15. 查文件抓到啥（命令行方式）</h3>
+<p>查找 sceneId / deliveryId / pages-fast：</p>
+<div class="code-block" onclick="copyCode(this)">grep -i "sceneId\|deliveryId\|pages-fast" ~/taobao-log.txt</div>
+
+<p>查找 spmb 关键词：</p>
+<div class="code-block" onclick="copyCode(this)">grep -i "spmb" ~/taobao-log.txt</div>
+
+<p>查找结果导出到单独文件方便查看：</p>
+<div class="code-block" onclick="copyCode(this)">grep -i "sceneId\|deliveryId\|spmb" ~/taobao-log.txt > ~/scene-id.txt</div>
+
+<h3>16. 查找最后一个 spmb 链接（文件查看方式）</h3>
+
+<p>用 Termux 内置文本编辑器打开日志文件：</p>
+<div class="code-block" onclick="copyCode(this)">nano ~/taobao-log.txt</div>
+
+<p>在 nano 里查找 spmb：</p>
+<ul>
+  <li>按 <code>Ctrl+W</code>（搜索快捷键）</li>
+  <li>输入：<code>spmb</code></li>
+  <li>按回车 → 跳到第一个匹配位置</li>
+  <li>继续按 <code>Ctrl+W</code> → 直接回车 → 跳到下一个</li>
+  <li>重复操作，直到提示「not found」为止</li>
+  <li>提示「not found」时，光标停的位置就是<b>最后一个含 spmb 的链接</b></li>
+</ul>
+
+<div class="tip">
+<b>关键操作</b>：当 nano 提示「[ "spmb" not found ]」时，说明已到末尾，<b>当前光标所在的行就是最后一个含 spmb 的链接</b>。整行复制即可。
+</div>
+
+<p>退出 nano：<code>Ctrl+X</code>（不保存直接退）</p>
+
+<h3>17. 用手机文本编辑器查看（推荐，更直观）</h3>
+
+<p>Termux 把日志文件放到手机能访问的目录：</p>
+<div class="code-block" onclick="copyCode(this)">cp ~/taobao-log.txt /sdcard/taobao-log.txt</div>
+
+<p>然后用手机文件管理器或文本编辑器打开：</p>
+<ul>
+  <li>文件管理器 → 内部存储 → 找到 <code>taobao-log.txt</code></li>
+  <li>长按 → 用文本编辑器打开（推荐 WPS、QuickEdit、MT 管理器）</li>
+  <li>用编辑器的「查找」功能搜 <code>spmb</code></li>
+  <li>反复点「下一个」→ 最后一个就是目标链接</li>
+</ul>
+
+<div class="note">
+<b>注意</b>：spmb 是淘宝 SPM 埋点参数（页面追踪 ID），通常出现在 URL 的 <code>&spmb=</code> 或 <code>?spmb=</code> 里。例如：
+<code>https://pages-fast.m.taobao.com/...?...&spmb=46023237&...</code>
+</div>
+
+<h2>三、Termux 被杀后再开（不用电脑）</h2>
+<p>逐条执行：</p>
+<div class="code-block" onclick="copyCode(this)">termux-wake-lock</div>
+<div class="code-block" onclick="copyCode(this)">adb connect 192.168.3.50:5555</div>
+<div class="code-block" onclick="copyCode(this)">export ANDROID_SERIAL=192.168.3.50:5555</div>
+<div class="code-block" onclick="copyCode(this)">adb logcat -c</div>
+<div class="code-block" onclick="copyCode(this)">adb logcat -v time | grep -i "taobao\|sceneId\|deliveryId"</div>
+
+<h2>四、手机重启后（必须回电脑）</h2>
+<p>5555 失效，电脑 cmd 执行：</p>
+<div class="code-block" onclick="copyCode(this)">E:\adb\adb.exe tcpip 5555</div>
+<p>然后从第 6 步继续。</p>
+
+<h2>关键提示</h2>
+<ul>
+  <li>IP 换成自己的（每台手机不一样）</li>
+  <li>手机别重启，重启就要回电脑激活一次</li>
+  <li>Termux 别被杀，加电池白名单 + <code>termux-wake-lock</code></li>
+  <li>两台手机互换抓，把 IP 对调即可</li>
+</ul>
+
+<h2>常见问题</h2>
+
+<p><b>Q: adb connect 提示 Connection refused？</b><br>
+A: 5555 端口失效了，回电脑执行 <code>adb tcpip 5555</code> 重新激活</p>
+
+<p><b>Q: adb devices 提示 unauthorized？</b><br>
+A: 看目标机屏幕有没有弹授权窗，没弹就去 设置→开发人员选项→撤销USB调试授权，然后重连</p>
+
+<p><b>Q: adb logcat -c 提示 more than one device/emulator？</b><br>
+A: 有多个设备，用 -s 指定，或 <code>export ANDROID_SERIAL=IP:5555</code></p>
+
+<p><b>Q: 拔掉 USB 后还能连？</b><br>
+A: 能，只要手机没重启，5555 监听一直在</p>
+
+<p><b>Q: 抓不到淘宝日志？</b><br>
+A: 检查目标机系统版本：</p>
+<ul>
+  <li>鸿蒙 2/3/4.x：能抓（AOSP 兼容）</li>
+  <li>鸿蒙 7.0（纯血）：不能抓，没 logcat，只能用 hdc</li>
+</ul>
+
+<script>
+function copyCode(element) {
+  const text = element.textContent.replace(/点击复制|已复制 ✓/g, '').trim();
+  navigator.clipboard.writeText(text).then(() => {
+    element.classList.add('copied');
+    setTimeout(() => {
+      element.classList.remove('copied');
+    }, 1500);
+  }).catch(() => {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+      document.execCommand('copy');
+      element.classList.add('copied');
+      setTimeout(() => {
+        element.classList.remove('copied');
+      }, 1500);
+    } catch (e) {}
+    document.body.removeChild(textarea);
+  });
+}
+</script>
+
+</body>
+</html>
