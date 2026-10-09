@@ -221,6 +221,65 @@ xxxxxxxx        device</div>
 <code>https://pages-fast.m.taobao.com/...?...&spmb=46023237&...</code>
 </div>
 
+<h2>三-补充：电脑无线抓日志（鸿蒙手机适用，免插数据线）</h2>
+
+<div class="tip">
+<b>适用场景</b>：鸿蒙 2/3/4.x 手机 + 电脑在同一 Wi-Fi。首次用 USB 激活一次 5555 端口后，<b>拔掉 USB 也能无线抓日志</b>，不用一直插着线。
+</div>
+
+<div class="warn">
+<b>前提</b>：鸿蒙手机没有原生「无线调试」开关，必须先用 USB 连电脑跑一次 <code>adb tcpip 5555</code> 激活端口。手机一旦重启，5555 监听失效，需重新插电脑激活。
+</div>
+
+<h3>① 一次性激活 5555 端口（USB 插着时）</h3>
+
+<p>先按「二、手机开启 USB 调试」连上 USB，确认 <code>adb devices</code> 能看到设备。</p>
+
+<p>电脑 cmd 执行：</p>
+<div class="code-block" onclick="copyCode(this)">E:\adb\adb.exe tcpip 5555</div>
+
+<p>看到下面输出表示激活成功：</p>
+<div class="code-block" onclick="copyCode(this)">restarting in TCP mode port: 5555</div>
+
+<h3>② 查手机 IP</h3>
+<div class="code-block" onclick="copyCode(this)">E:\adb\adb.exe shell ip -f inet addr show wlan0</div>
+
+<p>输出里找 <code>inet 192.168.x.x</code>（不是 .255，那是广播地址），记下这个 IP。</p>
+
+<h3>③ 拔掉 USB，无线连接</h3>
+<div class="code-block" onclick="copyCode(this)">E:\adb\adb.exe connect 192.168.x.x:5555</div>
+
+<p>把 <code>192.168.x.x</code> 换成第②步查到的真实 IP。</p>
+
+<h3>④ 验证连接</h3>
+<div class="code-block" onclick="copyCode(this)">E:\adb\adb.exe devices</div>
+
+<p>看到 <code>192.168.x.x:5555  device</code> 就无线连上了。</p>
+
+<h3>⑤ 抓日志（和 USB 方式完全一样）</h3>
+<div class="code-block" onclick="copyCode(this)">E:\adb\adb.exe -s 192.168.x.x:5555 logcat -c</div>
+
+<p>实时过滤：</p>
+<div class="code-block" onclick="copyCode(this)">E:\adb\adb.exe -s 192.168.x.x:5555 logcat -v time | findstr /i "taobao sceneId deliveryId spmb"</div>
+
+<p>或存文件：</p>
+<div class="code-block" onclick="copyCode(this)">E:\adb\adb.exe -s 192.168.x.x:5555 logcat -v time > E:\taobao-crawler\adb-log.txt</div>
+
+<div class="note">
+<b>注意</b>：无线连接时 <code>adb devices</code> 里设备是 <code>192.168.x.x:5555</code> 这种形式，如果同时还有 USB 设备，要用 <code>-s</code> 指定目标，否则会报 <code>more than one device</code>。
+</div>
+
+<h3>⑥ 手机重启后恢复</h3>
+
+<p>手机一旦重启，5555 监听消失，必须重新插电脑激活：</p>
+<div class="code-block" onclick="copyCode(this)">E:\adb\adb.exe tcpip 5555</div>
+
+<p>然后从第③步继续（connect IP）。</p>
+
+<div class="tip">
+<b>简化记忆</b>：只要手机没重启，电脑和手机在同一 Wi-Fi，随时 <code>adb connect IP:5555</code> 就能抓，不用插 USB。
+</div>
+
 <h2>四、抓完后查找关键参数（cmd 命令行方式）</h2>
 
 <p>方式 C 存文件后，在 cmd 里查找 sceneId / deliveryId：</p>
