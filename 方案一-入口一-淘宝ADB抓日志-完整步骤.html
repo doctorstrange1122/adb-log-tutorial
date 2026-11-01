@@ -316,16 +316,16 @@ xxxxxxxx        device</div>
 <p>输出里找 <code>inet 192.168.x.x</code>（不是 .255），记下 IP。</p>
 
 <p><b>③ 拔掉 USB，无线连接</b></p>
-<div class="code-block" onclick="copyCode(this)">E:\adb\adb.exe connect 192.168.x.x:5555</div>
+<div class="code-block" onclick="copyCode(this)">E:\adb\adb.exe connect 这里粘手机IP:5555</div>
 
 <p><b>④ 验证连接</b></p>
 <div class="code-block" onclick="copyCode(this)">E:\adb\adb.exe devices</div>
 <p>看到 <code>192.168.x.x:5555  device</code> 就无线连上了。</p>
 
 <p><b>⑤ 无线抓日志</b></p>
-<div class="code-block" onclick="copyCode(this)">E:\adb\adb.exe -s 192.168.x.x:5555 logcat -c</div>
-<div class="code-block" onclick="copyCode(this)">E:\adb\adb.exe -s 192.168.x.x:5555 logcat -v time | findstr /i "taobao sceneId deliveryId spmb"</div>
-<div class="code-block" onclick="copyCode(this)">E:\adb\adb.exe -s 192.168.x.x:5555 logcat -v time > E:\taobao-crawler\adb-log.txt</div>
+<div class="code-block" onclick="copyCode(this)">E:\adb\adb.exe -s 这里粘手机IP:5555 logcat -c</div>
+<div class="code-block" onclick="copyCode(this)">E:\adb\adb.exe -s 这里粘手机IP:5555 logcat -v time | findstr /i "taobao sceneId deliveryId spmb"</div>
+<div class="code-block" onclick="copyCode(this)">E:\adb\adb.exe -s 这里粘手机IP:5555 logcat -v time > E:\taobao-crawler\adb-log.txt</div>
 
 <div class="note">
 <b>注意</b>：无线连接时设备名是 <code>192.168.x.x:5555</code>，如果同时还有 USB 设备，要用 <code>-s</code> 指定，否则报 <code>more than one device</code>。
