@@ -204,7 +204,7 @@
 <div class="result-block">https://ur.alipay.com/_xxxxxxxx</div>
 
 <p>把它展开成真实落地地址（电脑 cmd 执行，链接换成你自己的）：</p>
-<div class="code-block" onclick="copyCode(this)">curl -sL -w "\nFINAL=%{url_effective}\n" -A "Mozilla/5.0 (Linux; Android 12; PCT-AL10) AppleWebKit/537.36 Chrome/120.0 Mobile AlipayGphone/10.5.76" "https://codeapp.alipay.com/s/xxxxxxx"</div>
+<div class="code-block" onclick="copyCode(this)">curl -sL -w "\nFINAL=%{url_effective}\n" -A "Mozilla/5.0 (Linux; Android 12; PCT-AL10) AppleWebKit/537.36 Chrome/120.0 Mobile AlipayGphone/10.5.76" "这里换成你自己的支付宝短链"</div>
 
 <div class="note">
 <b>必须在 cmd 里直接执行</b>（不要写成 .bat 批处理），因为 <code>%{url_effective}</code> 在批处理里会被当成变量，需要写成 <code>%%</code>。
@@ -216,7 +216,7 @@
 <h3>2.2 解码活动页长链</h3>
 
 <p>其中 <code>url=</code> 到 <code>&amp;apshareid</code> 之间那一段就是活动页长链，是 URL 编码的，解码一下：</p>
-<div class="code-block" onclick="copyCode(this)">powershell -NoProfile -Command "[uri]::UnescapeDataString('https%3A%2F%2Fpages.tmall.com%2Fwow%2Fz%2Fhdwk%2Falipayfarm%2F2026-activity%3Ftype%3Dvisit%26source%3Dbaixianbaipin_share')"</div>
+<div class="code-block" onclick="copyCode(this)">powershell -NoProfile -Command "[uri]::UnescapeDataString('这里粘从 FINAL= 里 url= 后摘出来那段编码串')"</div>
 
 <p>解码结果：</p>
 <div class="result-block">https://pages.tmall.com/wow/z/hdwk/alipayfarm/2026-activity?type=visit&source=baixianbaipin_share</div>
@@ -233,7 +233,7 @@
 <div class="code-block" onclick="copyCode(this)">mkdir E:\alipay-crawler</div>
 
 <p>下载页面（URL 带 <code>&amp;</code>，<b>一定要加双引号</b>）：</p>
-<div class="code-block" onclick="copyCode(this)">curl -s -A "Mozilla/5.0 (Linux; Android 12; PCT-AL10) AppleWebKit/537.36 Chrome/120.0 Mobile AlipayGphone/10.5.76" "https://pages.tmall.com/wow/z/hdwk/alipayfarm/2026-activity?type=visit&source=baixianbaipin_share" -o E:\alipay-crawler\farm.html</div>
+<div class="code-block" onclick="copyCode(this)">curl -s -A "Mozilla/5.0 (Linux; Android 12; PCT-AL10) AppleWebKit/537.36 Chrome/120.0 Mobile AlipayGphone/10.5.76" "这里粘你 powershell 解码出来的活动页长链" -o E:\alipay-crawler\farm.html</div>
 
 <p>确认文件拿到（正常 200 KB 左右）：</p>
 <div class="code-block" onclick="copyCode(this)">dir E:\alipay-crawler\farm.html</div>
