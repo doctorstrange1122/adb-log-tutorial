@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>方案一 · 入口二 支付宝 - 页面源码抓取完整步骤</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f5f5f5;
+    color: #333;
+    line-height: 1.7;
+    padding: 20px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  h1 {
+    text-align: center;
+    color: #2c3e50;
+    border-bottom: 3px solid #1677ff;
+    padding-bottom: 15px;
+  }
+  h2 {
+    color: #2c3e50;
+    background: #ecf0f1;
+    padding: 12px 18px;
+    border-left: 5px solid #1677ff;
+    margin-top: 40px;
+    border-radius: 4px;
+  }
+  h3 {
+    color: #34495e;
+    margin-top: 25px;
+    padding-left: 10px;
+    border-left: 3px solid #95a5a6;
+  }
+  p { margin: 10px 0; }
+  ul, ol { margin: 10px 0; padding-left: 25px; }
+  li { margin: 5px 0; }
+  .code-block {
+    background: #2d2d2d;
+    color: #ff6b6b;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-family: "Consolas", "Monaco", "Courier New", monospace;
+    font-size: 14px;
+    margin: 10px 0;
+    cursor: pointer;
+    position: relative;
+    border-left: 4px solid #ff6b6b;
+    transition: background 0.2s;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .code-block:hover { background: #3a3a3a; }
+  .code-block::after {
+    content: "点击复制";
+    position: absolute;
+    right: 10px;
+    top: 8px;
+    color: #95a5a6;
+    font-size: 12px;
+    font-family: sans-serif;
+  }
+  .code-block.copied::after {
+    content: "已复制 ✓";
+    color: #2ecc71;
+  }
+  .note {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 10px 15px;
+    margin: 10px 0;
+    border-radius: 4px;
+  }
+  .tip {
+    background: #d4edda;
+    border-left: 4px solid #28a745;
+    padding: 10px 15px;
+    margin: 10px 0;
+    border-radius: 4px;
+  }
+  .warn {
+    background: #f8d7da;
+    border-left: 4px solid #dc3545;
+    padding: 10px 15px;
+    margin: 10px 0;
+    border-radius: 4px;
+  }
+  code {
+    background: #f4f4f4;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: "Consolas", monospace;
+    color: #c7254e;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    margin: 12px 0;
+    font-size: 14px;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  th {
+    background: #34495e;
+    color: #fff;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: bold;
+  }
+  td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #ecf0f1;
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  .nav {
+    background: #fff;
+    border-radius: 6px;
+    padding: 10px 16px;
+    margin: 16px 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    font-size: 14px;
+  }
+  .nav a { color: #3498db; text-decoration: none; }
+  .nav a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<h1>方案一 · 入口② 支付宝（H5 页面源码抓取）</h1>
+
+<p style="text-align:center; color:#7f8c8d;">
+入口二完整步骤 · <b>不需要 ADB、不需要 USB 调试、不需要 root、不需要抓包证书</b><br>
+只要一条活动页链接，电脑 curl 或手机浏览器就能出结果
+</p>
+
+<div class="nav">
+<a href="方案一-电脑USB抓取日志-完整步骤.html">← 返回入口选择</a>
+&nbsp;|&nbsp;
+需要抓淘宝？<a href="方案一-入口一-淘宝ADB抓日志-完整步骤.html">去入口① 淘宝</a>
+</div>
+
+<div class="tip">
+<b>原理</b>：支付宝农场 / 助农的活动页是托管在 <code>pages.tmall.com</code> 的 SSR 页面，活动配置被直接内联进 HTML 的 <code>window.$data</code> 里。<b>不经过 App 日志</b>，所以 ADB logcat、dumpsys、uiautomator 都抓不到，只能直接请求页面或看页面源码。
+</div>
+
+<h2>一、拿到活动页链接</h2>
+
+<h3>2.1 展开支付宝分享短链</h3>
+
+<p>支付宝分享 / 复制出来的链接通常有两种短链形态：</p>
+<div class="code-block" onclick="copyCode(this)">https://codeapp.alipay.com/s/xxxxxxx</div>
+<div class="code-block" onclick="copyCode(this)">https://ur.alipay.com/_xxxxxxxx</div>
+
+<p>把它展开成真实落地地址（电脑 cmd 执行，链接换成你自己的）：</p>
+<div class="code-block" onclick="copyCode(this)">curl -sL -w "\nFINAL=%{url_effective}\n" -A "Mozilla/5.0 (Linux; Android 12; PCT-AL10) AppleWebKit/537.36 Chrome/120.0 Mobile AlipayGphone/10.5.76" "https://codeapp.alipay.com/s/xxxxxxx"</div>
+
+<div class="note">
+<b>必须在 cmd 里直接执行</b>（不要写成 .bat 批处理），因为 <code>%{url_effective}</code> 在批处理里会被当成变量，需要写成 <code>%%</code>。
+</div>
+
+<p>输出末尾 <code>FINAL=</code> 后面就是落地协议，长这样：</p>
+<div class="code-block" onclick="copyCode(this)">alipays://platformapi/startapp?appId=20000067&url=https%3A%2F%2Fpages.tmall.com%2Fwow%2Fz%2Fhdwk%2Falipayfarm%2F2026-activity%3Ftype%3Dvisit%26source%3Dbaixianbaipin_share&apshareid=2fcddb82-7d06-4869-bf4c-ee2093149729&shareBizType=BABAFarm</div>
+
+<h3>2.2 解码活动页长链</h3>
+
+<p>其中 <code>url=</code> 到 <code>&amp;apshareid</code> 之间那一段就是活动页长链，是 URL 编码的，解码一下：</p>
+<div class="code-block" onclick="copyCode(this)">powershell -NoProfile -Command "[uri]::UnescapeDataString('https%3A%2F%2Fpages.tmall.com%2Fwow%2Fz%2Fhdwk%2Falipayfarm%2F2026-activity%3Ftype%3Dvisit%26source%3Dbaixianbaipin_share')"</div>
+
+<p>解码结果：</p>
+<div class="code-block" onclick="copyCode(this)">https://pages.tmall.com/wow/z/hdwk/alipayfarm/2026-activity?type=visit&source=baixianbaipin_share</div>
+
+<div class="warn">
+<b>活动页路径会变</b>：<code>alipayfarm/2026-activity</code> 只是当前这一场，以你自己分享链展开后 <code>url=</code> 解码出来的地址为准，不要照抄。
+</div>
+
+<h2>二、抓取参数</h2>
+
+<h3>2.3 下载活动页 HTML</h3>
+
+<p>先建输出目录：</p>
+<div class="code-block" onclick="copyCode(this)">mkdir E:\alipay-crawler</div>
+
+<p>下载页面（URL 带 <code>&amp;</code>，<b>一定要加双引号</b>）：</p>
+<div class="code-block" onclick="copyCode(this)">curl -s -A "Mozilla/5.0 (Linux; Android 12; PCT-AL10) AppleWebKit/537.36 Chrome/120.0 Mobile AlipayGphone/10.5.76" "https://pages.tmall.com/wow/z/hdwk/alipayfarm/2026-activity?type=visit&source=baixianbaipin_share" -o E:\alipay-crawler\farm.html</div>
+
+<p>确认文件拿到（正常 200 KB 左右）：</p>
+<div class="code-block" onclick="copyCode(this)">dir E:\alipay-crawler\farm.html</div>
+
+<h3>2.4 查参数（一条命令出结果）</h3>
+
+<div class="code-block" onclick="copyCode(this)">findstr /i "orderDeliveryId visitDeliveryId visitSceneId orderSceneId shareType orderTaskCode" E:\alipay-crawler\farm.html</div>
+
+<p>一次查全部任务配置：</p>
+<div class="code-block" onclick="copyCode(this)">findstr /i "taskConfig" E:\alipay-crawler\farm.html</div>
+
+<p>结果太长就导出成单独文件再看：</p>
+<div class="code-block" onclick="copyCode(this)">findstr /i "orderDeliveryId visitDeliveryId visitSceneId" E:\alipay-crawler\farm.html > E:\alipay-crawler\delivery-id.txt</div>
+
+<div class="code-block" onclick="copyCode(this)">notepad E:\alipay-crawler\delivery-id.txt</div>
+
+<div class="tip">
+<b>实测结果（当前这版助农活动页）</b><br>
+<code>orderDeliveryId=104283</code>（下单任务）<br>
+<code>visitDeliveryId=104321</code>（浏览/到访任务）<br>
+<code>visitSceneId=10021</code>、<code>orderSceneId=10021</code><br>
+<code>shareType=BABAFarm</code>、<code>orderTaskCode=alipay_live_order_task_high</code>
+</div>
+
+<h3>2.5 备用做法：浏览器直接看（手机也能用）</h3>
+
+<ol>
+  <li>浏览器打开解码后的活动页长链</li>
+  <li>直接 <code>Ctrl+F</code> 搜 <code>orderDeliveryId</code></li>
+  <li>或按 <code>F12</code> 打开控制台，输入下面这条命令回车，打印整份配置</li>
+</ol>
+
+<div class="code-block" onclick="copyCode(this)">window.$data</div>
+
+<p>只想看任务 ID：</p>
+<div class="code-block" onclick="copyCode(this)">JSON.stringify(window.$data).match(/orderDeliveryId[^,]*/g)</div>
+
+<h2>三、参数说明</h2>
+
+<h3>2.6 支付宝参数与淘宝对照</h3>
+
+<table>
+  <tr>
+    <th style="width:32%;">支付宝活动页参数</th>
+    <th style="width:26%;">含义</th>
+    <th style="width:18%;">实测值</th>
+    <th>淘宝侧对应</th>
+  </tr>
+  <tr>
+    <td><code>orderDeliveryId</code></td>
+    <td>下单任务的投放 ID</td>
+    <td>104283</td>
+    <td><code>deliveryId</code></td>
+  </tr>
+  <tr>
+    <td><code>visitDeliveryId</code></td>
+    <td>浏览/到访任务的投放 ID</td>
+    <td>104321</td>
+    <td><code>deliveryId</code></td>
+  </tr>
+  <tr>
+    <td><code>visitSceneId</code> / <code>orderSceneId</code></td>
+    <td>任务所属场景 ID</td>
+    <td>10021</td>
+    <td><code>sceneId</code></td>
+  </tr>
+  <tr>
+    <td><code>activityId</code> / <code>hd_from_id</code></td>
+    <td>活动本体 ID（两端共用）</td>
+    <td>100085</td>
+    <td><code>hd_from_id</code></td>
+  </tr>
+  <tr>
+    <td><code>shareType</code></td>
+    <td>分享业务标识</td>
+    <td>BABAFarm</td>
+    <td>—</td>
+  </tr>
+  <tr>
+    <td><code>apshareid</code></td>
+    <td>用户归因（谁分享的）</td>
+    <td>UUID</td>
+    <td><code>fromToken</code></td>
+  </tr>
+</table>
+
+<div class="warn">
+<b>别当成归因参数</b>：<code>orderDeliveryId</code>、<code>visitDeliveryId</code>、<code>sceneId</code> 都是<b>活动常量</b>（所有人相同）。用户归因在 <code>apshareid</code>（支付宝）或 <code>fromToken</code>（淘宝），而且不在页面配置里。
+</div>
+
+<h2>四、常见问题</h2>
+
+<p><b>Q: 为什么 ADB 抓不到 orderDeliveryId？</b><br>
+A: 它是活动页配置项，不走 App 日志；dumpsys 和 uiautomator 也读不到 WebView 内部 URL。按本页方法抓页面源码。</p>
+
+<p><b>Q: findstr 在 farm.html 里什么都没搜到？</b><br>
+A: 1) 确认解码后的地址是 <code>pages.tmall.com</code> / <code>pages-fast.m.taobao.com</code> 的 <code>wow/z/</code> 活动页<br>
+2) 部分活动不是 SSR 渲染，改用浏览器 F12 打印 <code>window.$data</code><br>
+3) 看下载的 html 大小，几 KB 说明被拦或跳转了</p>
+
+<p><b>Q: curl 提示不是内部或外部命令？</b><br>
+A: Windows 10 1803 以上自带 curl。老系统直接浏览器打开页面另存为 html 也行。</p>
+
+<p><b>Q: 浏览器打开只看到活动页面，看不到参数？</b><br>
+A: 参数在页面源码里，不显示在界面上。按 <code>F12</code> → Console 输入 <code>window.$data</code>，或 <code>Ctrl+U</code> 看源码后搜索。</p>
+
+<h2>五、示例</h2>
+
+<div class="code-block" onclick="copyCode(this)">"shareType":"BABAFarm","visitDeliveryId":"104321","orderDeliveryId":"104283","visitSceneId":"10021","orderSceneId":"10021","orderTaskCode":"alipay_live_order_task_high"</div>
+
+<p>支付宝里的「去淘宝做任务」跨端链接（淘宝 <code>dps://</code> 包裹），同样解 <code>url=</code> 就能看到参数：</p>
+<div class="code-block" onclick="copyCode(this)">dps://p?url=https%3A%2F%2Fpages-fast.m.taobao.com%2Fwow%2Fz%2Fhdwk%2Ffarm-ssr%2Ftmfarm%3F...%26hd_from%3Dalipay_mayifarm%26hd_from_id%3D100085%26sceneId%3D3646%26activityId%3D100085%26deliveryId%3D58298%26implId%3Dother_1430_2892009_58298_0</div>
+
+<ul>
+  <li>不用设备、不用 root，一条 curl 就够</li>
+  <li>活动页路径和 ID 每期都会变，以当次分享链展开结果为准</li>
+  <li>参数是活动常量，不是用户归因</li>
+</ul>
+
+<div class="nav">
+<a href="方案一-电脑USB抓取日志-完整步骤.html">← 返回入口选择</a>
+&nbsp;|&nbsp;
+<a href="方案一-入口一-淘宝ADB抓日志-完整步骤.html">去入口① 淘宝</a>
+</div>
+
+<script>
+function copyCode(element) {
+  const text = element.textContent.replace(/点击复制|已复制 ✓/g, '').trim();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      element.classList.add('copied');
+      setTimeout(() => { element.classList.remove('copied'); }, 1500);
+    }).catch(() => { fallbackCopy(element, text); });
+  } else {
+    fallbackCopy(element, text);
+  }
+}
+function fallbackCopy(element, text) {
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+  try {
+    document.execCommand('copy');
+    element.classList.add('copied');
+    setTimeout(() => { element.classList.remove('copied'); }, 1500);
+  } catch (e) {}
+  document.body.removeChild(textarea);
+}
+</script>
+
+</body>
+</html>
