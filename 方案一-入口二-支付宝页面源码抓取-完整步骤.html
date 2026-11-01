@@ -199,9 +199,10 @@
 
 <h3>2.1 展开支付宝分享短链</h3>
 
-<p>支付宝分享 / 复制出来的链接通常有两种短链形态：</p>
+<p>支付宝分享 / 复制出来的链接通常有三种短链形态（<b>后两种会让 curl 输出里混入 HTML，忽略，只看 FINAL=</b>）：</p>
 <div class="result-block">https://codeapp.alipay.com/s/xxxxxxx</div>
 <div class="result-block">https://ur.alipay.com/_xxxxxxxx</div>
+<div class="result-block">https://render.alipay.com/p/c/xxxxxxxxxxxxxxxx/share.html?scheme=...&shareToken=...</div>
 
 <p>把它展开成真实落地地址（电脑 cmd 执行，链接换成你自己的）：</p>
 <div class="code-block" onclick="copyCode(this)">curl -sL -w "\nFINAL=%{url_effective}\n" -A "Mozilla/5.0 (Linux; Android 12; PCT-AL10) AppleWebKit/537.36 Chrome/120.0 Mobile AlipayGphone/10.5.76" "这里换成你自己的支付宝短链"</div>
@@ -210,19 +211,33 @@
 <b>必须在 cmd 里直接执行</b>（不要写成 .bat 批处理），因为 <code>%{url_effective}</code> 在批处理里会被当成变量，需要写成 <code>%%</code>。
 </div>
 
-<p>输出末尾 <code>FINAL=</code> 后面就是落地协议，长这样：</p>
+<p>命令执行完，<b>curl 输出里会混一堆 render.alipay.com 的 HTML 代码</b>，不用管，只找最后一行以 <code>FINAL=</code> 开头的。FINAL= 后面那整串就是落地协议。</p>
+<p>FINAL= 后通常有两种样子：</p>
+
+<p><b>样子 A（单层编码，简单）</b>：</p>
 <div class="result-block">alipays://platformapi/startapp?appId=20000067&url=https%3A%2F%2Fpages.tmall.com%2Fwow%2Fz%2Fhdwk%2Falipayfarm%2F2026-activity%3Ftype%3Dvisit%26source%3Dbaixianbaipin_share&apshareid=2fcddb82-7d06-4869-bf4c-ee2093149729&shareBizType=BABAFarm</div>
+
+<p><b>样子 B（嵌在 render.alipay.com 分享页里，双重编码）</b>：</p>
+<div class="result-block">https://render.alipay.com/p/c/180020570000007769/share.html?scheme=%61%6C%69%70%61%79%73%3A%2F%2F...&shareToken=...</div>
+<p>这里 scheme= 后面是 <code>%61%6C%69%70%61%79%73</code> 这种 <b>每个字母都转成十六进制</b> 的 hex escape 写法，套了两层编码，多解一步。</p>
 
 <h3>2.2 解码活动页长链</h3>
 
-<p>其中 <code>url=</code> 到 <code>&amp;apshareid</code> 之间那一段就是活动页长链，是 URL 编码的，解码一下：</p>
-<div class="code-block" onclick="copyCode(this)">powershell -NoProfile -Command "[uri]::UnescapeDataString('这里粘从 FINAL= 里 url= 后摘出来那段编码串')"</div>
+<p>两种样子都用同一条命令，把 FINAL= 后面那整串粘进去（<b>注意是 FINAL= 后的整串，从 alipays:// 或 https://render.alipay.com 开头一直到末尾</b>）：</p>
 
-<p>解码结果：</p>
+<div class="code-block" onclick="copyCode(this)">powershell -NoProfile -Command "$raw='这里粘 FINAL= 后面那整串'; $h=[regex]::Replace($raw,'%([0-9A-Fa-f]{2})',{param($m)[char][int]$m.Groups[1].Value}); $u=[regex]::Match($h,'url=([^&]+)').Groups[1].Value; [uri]::UnescapeDataString($u)"</div>
+
+<div class="tip">
+<b>这条命令自动处理两层编码</b>：先把所有 <code>%XX</code> 还原成字符（解决 render.alipay.com 那种 hex escape），再从里面抠 <code>url=...</code> 那段，最后解一次 percent-encoding。
+</div>
+
+<p>解码结果应该长这样（比对，<b>不要复制</b>）：</p>
 <div class="result-block">https://pages.tmall.com/wow/z/hdwk/alipayfarm/2026-activity?type=visit&source=baixianbaipin_share</div>
 
 <div class="warn">
-<b>活动页路径会变</b>：<code>alipayfarm/2026-activity</code> 只是当前这一场，以你自己分享链展开后 <code>url=</code> 解码出来的地址为准，不要照抄。
+<b>活动页路径会变</b>：<code>alipayfarm/2026-activity</code> 只是当前这一场，以你自己 powershell 跑出来的结果为准，不要照抄示例。
+<br><br>
+<b>关键验证</b>：解码结果的域名必须是 <code>pages.tmall.com</code> 或 <code>pages-fast.m.taobao.com</code>，<b>绝对不能是 render.alipay.com</b>。如果还是 render.alipay.com，说明 powershell 没解干净，把 FINAL= 那整串再确认一下粘进去。
 </div>
 
 <h2>二、抓取参数</h2>
@@ -325,6 +340,16 @@
 </div>
 
 <h2>四、常见问题</h2>
+
+<p><b>Q: curl -o farm.html 后 dir 显示文件 0 字节？</b><br>
+A: <b>URL 粘错了</b>。你大概率把 render.alipay.com 的分享页地址（FINAL= 里那种）粘进了 curl，render.alipay.com 需要支付宝 App 环境才会返回内容，curl 拿不到。<br>
+<br>
+回到 Step 2.2 跑 powershell 解码，<b>解码结果的域名必须是 <code>pages.tmall.com</code> 或 <code>pages-fast.m.taobao.com</code></b>，把那串明文粘进 curl。绝对不能粘 render.alipay.com。
+</p>
+
+<p><b>Q: curl 输出里混一堆 &lt;script&gt; 堆，找不到 FINAL= 那行？</b><br>
+A: 分享链是 render.alipay.com 类型就会这样。它本身是分享中间页，curl 跟进跳转后拿到的是分享页 HTML，FINAL= 追加在最后。<b>滚动到输出最末尾</b>，最后一行就是 FINAL=。如果完全没 FINAL=，说明你没加 <code>-w "\nFINAL=%{url_effective}\n"</code> 那个参数。
+</p>
 
 <p><b>Q: 为什么 ADB 抓不到 orderDeliveryId？</b><br>
 A: 它是活动页配置项，不走 App 日志；dumpsys 和 uiautomator 也读不到 WebView 内部 URL。按本页方法抓页面源码。</p>
