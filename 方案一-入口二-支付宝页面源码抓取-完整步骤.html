@@ -66,6 +66,48 @@
     content: "已复制 ✓";
     color: #2ecc71;
   }
+  .result-block {
+    background: #eef2f6;
+    color: #2c3e50;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-family: "Consolas", "Monaco", "Courier New", monospace;
+    font-size: 13px;
+    margin: 10px 0;
+    border-left: 4px solid #16a085;
+    position: relative;
+    white-space: pre-wrap;
+    word-break: break-all;
+    cursor: default;
+    padding-top: 30px;
+  }
+  .result-block::after {
+    content: "比对结果 · 无需复制";
+    position: absolute;
+    right: 10px;
+    top: 8px;
+    color: #16a085;
+    font-size: 12px;
+    font-family: sans-serif;
+    font-weight: bold;
+  }
+  .legend {
+    background: #fff;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 16px 0;
+    font-size: 14px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  }
+  .legend span.sw {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    margin-right: 4px;
+  }
+  .legend span.sw.input { background: #2d2d2d; color: #ff6b6b; }
+  .legend span.sw.output { background: #eef2f6; color: #16a085; border: 1px solid #16a085; }
   .note {
     background: #fff3cd;
     border-left: 4px solid #ffc107;
@@ -143,6 +185,12 @@
 需要抓淘宝？<a href="方案一-入口一-淘宝ADB抓日志-完整步骤.html">去入口① 淘宝</a>
 </div>
 
+<div class="legend">
+<b>代码块说明</b><br>
+<span class="sw input">深色块</span>需要你<b>输入 / 执行</b>，点击即可复制内容<br>
+<span class="sw output">浅色块</span>是<b>命令输出或参考示例</b>，用来和你的结果比对，不能复制、也不用复制
+</div>
+
 <div class="tip">
 <b>原理</b>：支付宝农场 / 助农的活动页是托管在 <code>pages.tmall.com</code> 的 SSR 页面，活动配置被直接内联进 HTML 的 <code>window.$data</code> 里。<b>不经过 App 日志</b>，所以 ADB logcat、dumpsys、uiautomator 都抓不到，只能直接请求页面或看页面源码。
 </div>
@@ -152,8 +200,8 @@
 <h3>2.1 展开支付宝分享短链</h3>
 
 <p>支付宝分享 / 复制出来的链接通常有两种短链形态：</p>
-<div class="code-block" onclick="copyCode(this)">https://codeapp.alipay.com/s/xxxxxxx</div>
-<div class="code-block" onclick="copyCode(this)">https://ur.alipay.com/_xxxxxxxx</div>
+<div class="result-block">https://codeapp.alipay.com/s/xxxxxxx</div>
+<div class="result-block">https://ur.alipay.com/_xxxxxxxx</div>
 
 <p>把它展开成真实落地地址（电脑 cmd 执行，链接换成你自己的）：</p>
 <div class="code-block" onclick="copyCode(this)">curl -sL -w "\nFINAL=%{url_effective}\n" -A "Mozilla/5.0 (Linux; Android 12; PCT-AL10) AppleWebKit/537.36 Chrome/120.0 Mobile AlipayGphone/10.5.76" "https://codeapp.alipay.com/s/xxxxxxx"</div>
@@ -163,7 +211,7 @@
 </div>
 
 <p>输出末尾 <code>FINAL=</code> 后面就是落地协议，长这样：</p>
-<div class="code-block" onclick="copyCode(this)">alipays://platformapi/startapp?appId=20000067&url=https%3A%2F%2Fpages.tmall.com%2Fwow%2Fz%2Fhdwk%2Falipayfarm%2F2026-activity%3Ftype%3Dvisit%26source%3Dbaixianbaipin_share&apshareid=2fcddb82-7d06-4869-bf4c-ee2093149729&shareBizType=BABAFarm</div>
+<div class="result-block">alipays://platformapi/startapp?appId=20000067&url=https%3A%2F%2Fpages.tmall.com%2Fwow%2Fz%2Fhdwk%2Falipayfarm%2F2026-activity%3Ftype%3Dvisit%26source%3Dbaixianbaipin_share&apshareid=2fcddb82-7d06-4869-bf4c-ee2093149729&shareBizType=BABAFarm</div>
 
 <h3>2.2 解码活动页长链</h3>
 
@@ -171,7 +219,7 @@
 <div class="code-block" onclick="copyCode(this)">powershell -NoProfile -Command "[uri]::UnescapeDataString('https%3A%2F%2Fpages.tmall.com%2Fwow%2Fz%2Fhdwk%2Falipayfarm%2F2026-activity%3Ftype%3Dvisit%26source%3Dbaixianbaipin_share')"</div>
 
 <p>解码结果：</p>
-<div class="code-block" onclick="copyCode(this)">https://pages.tmall.com/wow/z/hdwk/alipayfarm/2026-activity?type=visit&source=baixianbaipin_share</div>
+<div class="result-block">https://pages.tmall.com/wow/z/hdwk/alipayfarm/2026-activity?type=visit&source=baixianbaipin_share</div>
 
 <div class="warn">
 <b>活动页路径会变</b>：<code>alipayfarm/2026-activity</code> 只是当前这一场，以你自己分享链展开后 <code>url=</code> 解码出来的地址为准，不要照抄。
@@ -294,10 +342,10 @@ A: 参数在页面源码里，不显示在界面上。按 <code>F12</code> → C
 
 <h2>五、示例</h2>
 
-<div class="code-block" onclick="copyCode(this)">"shareType":"BABAFarm","visitDeliveryId":"104321","orderDeliveryId":"104283","visitSceneId":"10021","orderSceneId":"10021","orderTaskCode":"alipay_live_order_task_high"</div>
+<div class="result-block">"shareType":"BABAFarm","visitDeliveryId":"104321","orderDeliveryId":"104283","visitSceneId":"10021","orderSceneId":"10021","orderTaskCode":"alipay_live_order_task_high"</div>
 
 <p>支付宝里的「去淘宝做任务」跨端链接（淘宝 <code>dps://</code> 包裹），同样解 <code>url=</code> 就能看到参数：</p>
-<div class="code-block" onclick="copyCode(this)">dps://p?url=https%3A%2F%2Fpages-fast.m.taobao.com%2Fwow%2Fz%2Fhdwk%2Ffarm-ssr%2Ftmfarm%3F...%26hd_from%3Dalipay_mayifarm%26hd_from_id%3D100085%26sceneId%3D3646%26activityId%3D100085%26deliveryId%3D58298%26implId%3Dother_1430_2892009_58298_0</div>
+<div class="result-block">dps://p?url=https%3A%2F%2Fpages-fast.m.taobao.com%2Fwow%2Fz%2Fhdwk%2Ffarm-ssr%2Ftmfarm%3F...%26hd_from%3Dalipay_mayifarm%26hd_from_id%3D100085%26sceneId%3D3646%26activityId%3D100085%26deliveryId%3D58298%26implId%3Dother_1430_2892009_58298_0</div>
 
 <ul>
   <li>不用设备、不用 root，一条 curl 就够</li>
