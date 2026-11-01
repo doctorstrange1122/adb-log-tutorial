@@ -66,6 +66,48 @@
     content: "已复制 ✓";
     color: #2ecc71;
   }
+  .result-block {
+    background: #eef2f6;
+    color: #2c3e50;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-family: "Consolas", "Monaco", "Courier New", monospace;
+    font-size: 13px;
+    margin: 10px 0;
+    border-left: 4px solid #16a085;
+    position: relative;
+    white-space: pre-wrap;
+    word-break: break-all;
+    cursor: default;
+    padding-top: 30px;
+  }
+  .result-block::after {
+    content: "比对结果 · 无需复制";
+    position: absolute;
+    right: 10px;
+    top: 8px;
+    color: #16a085;
+    font-size: 12px;
+    font-family: sans-serif;
+    font-weight: bold;
+  }
+  .legend {
+    background: #fff;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 16px 0;
+    font-size: 14px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  }
+  .legend span.sw {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    margin-right: 4px;
+  }
+  .legend span.sw.input { background: #2d2d2d; color: #ff6b6b; }
+  .legend span.sw.output { background: #eef2f6; color: #16a085; border: 1px solid #16a085; }
   .note {
     background: #fff3cd;
     border-left: 4px solid #ffc107;
@@ -128,6 +170,12 @@
 需要抓支付宝？<a href="方案一-入口二-支付宝页面源码抓取-完整步骤.html">去入口② 支付宝</a>
 </div>
 
+<div class="legend">
+<b>代码块说明</b><br>
+<span class="sw input">深色块</span>需要你<b>输入 / 执行</b>，点击即可复制内容<br>
+<span class="sw output">浅色块</span>是<b>命令输出或参考示例</b>，用来和你的结果比对，不能复制、也不用复制
+</div>
+
 <h2>一、准备工作</h2>
 
 <h3>1.1 下载安装 ADB 工具</h3>
@@ -162,8 +210,8 @@
 
 <p>电脑 cmd 执行：</p>
 <div class="code-block" onclick="copyCode(this)">E:\adb\adb.exe devices</div>
-<p>看到类似下面的输出表示连上了：</p>
-<div class="code-block" onclick="copyCode(this)">List of devices attached
+<p>看到类似下面的输出表示连上了（这一步只是示意，不要复制）：</p>
+<div class="result-block">List of devices attached
 xxxxxxxx        device</div>
 
 <h2>二、抓取日志</h2>
@@ -304,7 +352,9 @@ A: 用 <code>findstr</code> 先过滤再导出，别直接记事本打开几十 
 
 <h2>六、目标链接示例</h2>
 
-<div class="code-block" onclick="copyCode(this)">https://pages-fast.m.taobao.com/wow/z/app/ltao-fe/tbms-cooperation/home?ut_sk=...&deliveryId=75085&...&sceneId=7980&...</div>
+<p>抓到之后应该长这样，用来比对即可，<b>不要复制</b>：</p>
+
+<div class="result-block">https://pages-fast.m.taobao.com/wow/z/app/ltao-fe/tbms-cooperation/home?ut_sk=...&deliveryId=75085&...&sceneId=7980&...</div>
 
 <ul>
   <li>抓取期间手机别熄屏太久</li>
