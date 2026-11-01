@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>方案一 - 电脑USB抓取日志（完整步骤）</title>
+<title>方案一 - 电脑抓取淘宝 / 支付宝活动参数（完整步骤）</title>
 <style>
   body {
     font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
@@ -107,18 +107,87 @@
     font-family: "Consolas", monospace;
     color: #c7254e;
   }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    margin: 12px 0;
+    font-size: 14px;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  th {
+    background: #34495e;
+    color: #fff;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: bold;
+  }
+  td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #ecf0f1;
+    vertical-align: top;
+  }
+  tr:last-child td {
+    border-bottom: none;
+  }
+  .tag-a {
+    background: #e67e22;
+    color: #fff;
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-size: 12px;
+  }
+  .tag-b {
+    background: #1677ff;
+    color: #fff;
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-size: 12px;
+  }
 </style>
 </head>
 <body>
 
-<h1>ADB 抓取淘宝日志 - 完整操作步骤</h1>
+<h1>方案一 · 电脑抓取淘宝 / 支付宝活动参数（完整步骤）</h1>
 
 <p style="text-align:center; color:#7f8c8d;">
-适用：电脑 USB 连接手机，抓取淘宝 App 加载链接与 sceneId / deliveryId 参数<br>
+两个入口分成两套做法：<b>淘宝 / 天猫</b> 用 ADB 抓日志；<b>支付宝农场 / 助农</b> 用抓页面源码（免 root）<br>
 环境：Windows 系统 + 鸿蒙 2/3/4.x 手机（AOSP 兼容版）
 </p>
 
-<h2>一、下载安装 ADB 工具</h2>
+<h2>入口区分（先看这一节，别混用）</h2>
+
+<table>
+  <tr>
+    <th style="width:16%;">入口</th>
+    <th style="width:26%;">要抓的东西</th>
+    <th style="width:26%;">用哪一节</th>
+    <th>关键参数</th>
+  </tr>
+  <tr>
+    <td><span class="tag-a">入口 A</span><br>淘宝 / 天猫</td>
+    <td>活动落地 URL、埋点链接</td>
+    <td>第三节<br>ADB logcat 抓日志</td>
+    <td><code>sceneId</code>、<code>deliveryId</code>、<code>spmb</code></td>
+  </tr>
+  <tr>
+    <td><span class="tag-b">入口 B</span><br>支付宝（芭芭农场 / 助农）</td>
+    <td>活动页里的任务配置</td>
+    <td>第四节<br>抓 H5 页面源码</td>
+    <td><code>orderDeliveryId</code>、<code>visitDeliveryId</code>、<code>visitSceneId</code>、<code>shareType=BABAFarm</code></td>
+  </tr>
+</table>
+
+<div class="warn">
+<b>为什么两套做法不一样</b>：支付宝的活动页其实是托管在 <code>pages.tmall.com</code> 的 H5，参数直接内联在页面的 <code>window.$data</code> 里，<b>不经过 App 日志</b>。所以 ADB logcat、dumpsys、uiautomator 都抓不到；只能直接请求页面或看页面源码。
+</div>
+
+<div class="note">
+<b>参数不是一套</b>：淘宝侧叫 <code>deliveryId</code> / <code>sceneId</code>；支付宝活动页按任务拆成 <code>orderDeliveryId</code>（下单任务）和 <code>visitDeliveryId</code>（浏览/到访任务）。两边共用的是活动 ID（如 <code>100085</code>），不是同一套字段。
+</div>
+
+<h2>一、下载安装 ADB 工具（入口 A 需要）</h2>
 
 <h3>渠道一：Android 官网（推荐）</h3>
 <p>浏览器打开：</p>
@@ -136,7 +205,7 @@
 <b>解压目录约定</b>：统一解压到 <code>E:\adb</code>，解压后路径应为 <code>E:\adb\platform-tools\adb.exe</code>，但本教程命令直接用 <code>E:\adb\adb.exe</code>（建议把 platform-tools 里的 adb.exe 复制一份到 <code>E:\adb\</code> 根目录，方便调用）。
 </div>
 
-<h2>二、手机开启 USB 调试</h2>
+<h2>二、手机开启 USB 调试（入口 A 需要）</h2>
 
 <ol>
   <li>设置 → 关于手机 → 连点版本号 7 次（开启开发者模式）</li>
@@ -146,7 +215,7 @@
   <li>手机弹窗「是否允许 USB 调试」→ 勾「一律允许」→ 点允许</li>
 </ol>
 
-<h2>三、正式抓取完整步骤</h2>
+<h2>三、入口 A：淘宝 / 天猫 —— ADB 抓日志</h2>
 
 <h3>1. 验证设备连接</h3>
 <p>电脑 cmd 执行：</p>
@@ -217,8 +286,8 @@ xxxxxxxx        device</div>
 <p>找到最后一行后，整行选中 → <code>Ctrl+C</code> 复制，这就是你要的链接。</p>
 
 <div class="note">
-<b>注意</b>：spmb 是淘宝的 SPM 埋点参数（页面追踪 ID），通常出现在 URL 的 <code>&spmb=</code> 或 <code>?spmb=</code> 里。例如：
-<code>https://pages-fast.m.taobao.com/...?...&spmb=46023237&...</code>
+<b>注意</b>：spmb 是淘宝的 SPM 埋点参数（页面追踪 ID），通常出现在 URL 的 <code>&amp;spmb=</code> 或 <code>?spmb=</code> 里。例如：
+<code>https://pages-fast.m.taobao.com/...?...&amp;spmb=46023237&amp;...</code>
 </div>
 
 <h2>三-补充：电脑无线抓日志（鸿蒙手机适用，免插数据线）</h2>
@@ -280,22 +349,144 @@ xxxxxxxx        device</div>
 <b>简化记忆</b>：只要手机没重启，电脑和手机在同一 Wi-Fi，随时 <code>adb connect IP:5555</code> 就能抓，不用插 USB。
 </div>
 
-<h2>四、抓完后查找关键参数（cmd 命令行方式）</h2>
+<h2>四、入口 B：支付宝（芭芭农场 / 助农）—— 抓 H5 页面源码</h2>
 
-<p>方式 C 存文件后，在 cmd 里查找 sceneId / deliveryId：</p>
-<div class="code-block" onclick="copyCode(this)">findstr /i "sceneId deliveryId" E:\taobao-crawler\adb-log.txt</div>
+<div class="tip">
+<b>全程不需要 ADB、不需要 root、不需要抓包证书</b>。只要能拿到活动页那条链接，用电脑 curl 或者手机浏览器就能把参数读出来。
+</div>
 
-<p>查找 pages-fast 类 URL：</p>
-<div class="code-block" onclick="copyCode(this)">findstr /i "pages-fast.m.taobao.com" E:\taobao-crawler\adb-log.txt</div>
+<h3>原理一句话</h3>
+<p>支付宝农场/助农的活动页是 SSR 页面，活动配置（含任务 ID）被直接内联进 HTML 的 <code>window.$data</code> 变量里。请求到这个 URL，就能在返回的 HTML 里搜到 <code>orderDeliveryId</code> / <code>visitDeliveryId</code> / <code>visitSceneId</code>。</p>
 
-<p>查找 spmb 关键词（命令行方式）：</p>
-<div class="code-block" onclick="copyCode(this)">findstr /i "spmb" E:\taobao-crawler\adb-log.txt</div>
+<h3>第 1 步：拿到活动页长链（展开支付宝分享短链）</h3>
 
-<p>把结果导出到单独文件方便查看：</p>
-<div class="code-block" onclick="copyCode(this)">findstr /i "sceneId deliveryId spmb" E:\taobao-crawler\adb-log.txt > E:\taobao-crawler\scene-id.txt</div>
+<p>支付宝分享/复制出来的链接通常有两种短链形态：</p>
+<div class="code-block" onclick="copyCode(this)">https://codeapp.alipay.com/s/xxxxxxx</div>
+<div class="code-block" onclick="copyCode(this)">https://ur.alipay.com/_xxxxxxxx</div>
 
-<p>用记事本打开结果文件：</p>
-<div class="code-block" onclick="copyCode(this)">notepad E:\taobao-crawler\scene-id.txt</div>
+<p>把它展开成真实落地地址（电脑 cmd 执行，把链接换成你自己的）：</p>
+<div class="code-block" onclick="copyCode(this)">curl -sL -w "\nFINAL=%{url_effective}\n" -A "Mozilla/5.0 (Linux; Android 12; PCT-AL10) AppleWebKit/537.36 Chrome/120.0 Mobile AlipayGphone/10.5.76" "https://codeapp.alipay.com/s/xxxxxxx"</div>
+
+<div class="note">
+<b>必须在 cmd 里直接执行</b>（不要写成 .bat 文件），因为 <code>%{url_effective}</code> 在批处理里会被当成变量需要转义成 <code>%%</code>。
+</div>
+
+<p>输出末尾的 <code>FINAL=</code> 后面就是落地协议，长这样：</p>
+<div class="code-block" onclick="copyCode(this)">alipays://platformapi/startapp?appId=20000067&url=https%3A%2F%2Fpages.tmall.com%2Fwow%2Fz%2Fhdwk%2Falipayfarm%2F2026-activity%3Ftype%3Dvisit%26source%3Dbaixianbaipin_share&apshareid=2fcddb82-7d06-4869-bf4c-ee2093149729&shareBizType=BABAFarm</div>
+
+<p>里面 <code>url=</code> 后面那一段（到 <code>&amp;apshareid</code> 之前）就是活动页长链，是 URL 编码的，解码一下：</p>
+<div class="code-block" onclick="copyCode(this)">powershell -NoProfile -Command "[uri]::UnescapeDataString('https%3A%2F%2Fpages.tmall.com%2Fwow%2Fz%2Fhdwk%2Falipayfarm%2F2026-activity%3Ftype%3Dvisit%26source%3Dbaixianbaipin_share')"</div>
+
+<p>解码后得到：</p>
+<div class="code-block" onclick="copyCode(this)">https://pages.tmall.com/wow/z/hdwk/alipayfarm/2026-activity?type=visit&source=baixianbaipin_share</div>
+
+<div class="warn">
+<b>活动页路径会变</b>：<code>alipayfarm/2026-activity</code> 只是当前这一场。以你自己分享链展开后 <code>url=</code> 解码出来的地址为准，不要照抄。
+</div>
+
+<h3>第 2 步：下载活动页 HTML</h3>
+
+<p>先建输出目录：</p>
+<div class="code-block" onclick="copyCode(this)">mkdir E:\alipay-crawler</div>
+
+<p>下载页面（URL 带 <code>&amp;</code>，<b>一定要加双引号</b>）：</p>
+<div class="code-block" onclick="copyCode(this)">curl -s -A "Mozilla/5.0 (Linux; Android 12; PCT-AL10) AppleWebKit/537.36 Chrome/120.0 Mobile AlipayGphone/10.5.76" "https://pages.tmall.com/wow/z/hdwk/alipayfarm/2026-activity?type=visit&source=baixianbaipin_share" -o E:\alipay-crawler\farm.html</div>
+
+<p>确认文件拿到（正常会有 200 KB 左右）：</p>
+<div class="code-block" onclick="copyCode(this)">dir E:\alipay-crawler\farm.html</div>
+
+<h3>第 3 步：直接查参数（一条命令出结果）</h3>
+
+<div class="code-block" onclick="copyCode(this)">findstr /i "orderDeliveryId visitDeliveryId visitSceneId orderSceneId shareType orderTaskCode" E:\alipay-crawler\farm.html</div>
+
+<p>一次查全部任务配置：</p>
+<div class="code-block" onclick="copyCode(this)">findstr /i "taskConfig" E:\alipay-crawler\farm.html</div>
+
+<p>结果太长就导出成单独文件再看：</p>
+<div class="code-block" onclick="copyCode(this)">findstr /i "orderDeliveryId visitDeliveryId visitSceneId" E:\alipay-crawler\farm.html > E:\alipay-crawler\delivery-id.txt</div>
+
+<div class="code-block" onclick="copyCode(this)">notepad E:\alipay-crawler\delivery-id.txt</div>
+
+<div class="tip">
+<b>实测结果（当前这版助农活动页）</b><br>
+<code>orderDeliveryId=104283</code>（下单任务）<br>
+<code>visitDeliveryId=104321</code>（浏览/到访任务）<br>
+<code>visitSceneId=10021</code>、<code>orderSceneId=10021</code><br>
+<code>shareType=BABAFarm</code>、<code>orderTaskCode=alipay_live_order_task_high</code>
+</div>
+
+<h3>第 4 步（更省事的备用做法）：浏览器直接看</h3>
+
+<div class="tip">
+<b>不需要 ADB、不需要 root</b>。电脑或手机浏览器都能用，手机浏览器一样可以。
+</div>
+
+<ol>
+  <li>浏览器打开解码后的活动页长链</li>
+  <li>直接 <code>Ctrl+F</code> 搜关键词</li>
+  <li>或按 <code>F12</code> 打开控制台，输入下面这条命令回车，直接打印整份配置</li>
+</ol>
+
+<div class="code-block" onclick="copyCode(this)">window.$data</div>
+
+<p>只想看任务 ID：</p>
+<div class="code-block" onclick="copyCode(this)">JSON.stringify(window.$data).match(/orderDeliveryId[^,]*/g)</div>
+
+<h3>参数说明与两入口对照</h3>
+
+<table>
+  <tr>
+    <th style="width:30%;">参数</th>
+    <th style="width:26%;">含义</th>
+    <th style="width:22%;">支付宝农场实测</th>
+    <th>淘宝侧对应</th>
+  </tr>
+  <tr>
+    <td><code>orderDeliveryId</code></td>
+    <td>下单任务的投放/任务 ID</td>
+    <td>104283</td>
+    <td><code>deliveryId</code></td>
+  </tr>
+  <tr>
+    <td><code>visitDeliveryId</code></td>
+    <td>浏览（到访）任务的投放 ID</td>
+    <td>104321</td>
+    <td><code>deliveryId</code></td>
+  </tr>
+  <tr>
+    <td><code>visitSceneId</code> / <code>orderSceneId</code></td>
+    <td>任务所属场景 ID</td>
+    <td>10021</td>
+    <td><code>sceneId</code></td>
+  </tr>
+  <tr>
+    <td><code>activityId</code> / <code>hd_from_id</code></td>
+    <td>活动本体 ID（两端共用）</td>
+    <td>100085</td>
+    <td><code>hd_from_id</code></td>
+  </tr>
+  <tr>
+    <td><code>shareType</code></td>
+    <td>分享业务标识</td>
+    <td>BABAFarm</td>
+    <td>—</td>
+  </tr>
+  <tr>
+    <td><code>apshareid</code> / <code>fromToken</code></td>
+    <td>用户归因（谁分享的）</td>
+    <td>UUID / token</td>
+    <td><code>fromToken</code></td>
+  </tr>
+</table>
+
+<div class="warn">
+<b>别搞混</b>：<code>orderDeliveryId</code>、<code>visitDeliveryId</code>、<code>sceneId</code> 都是<b>活动常量</b>（所有人一样），不是“谁帮你助力”的归因参数。用户归因在 <code>apshareid</code>（支付宝）或 <code>fromToken</code>（淘宝），而且不在页面配置里。
+</div>
+
+<h3>跨端跳转链接的样子（参考）</h3>
+<p>淘宝端“去支付宝做任务”这类链接是淘宝自己的 <code>dps://</code> 协议包裹活动页，参数同样在 URL 里：</p>
+<div class="code-block" onclick="copyCode(this)">dps://p?url=https%3A%2F%2Fpages-fast.m.taobao.com%2Fwow%2Fz%2Fhdwk%2Ffarm-ssr%2Ftmfarm%3F...%26hd_from%3Dalipay_mayifarm%26hd_from_id%3D100085%26sceneId%3D3646%26activityId%3D100085%26deliveryId%3D58298%26implId%3Dother_1430_2892009_58298_0</div>
+<p>用同样的方法把 <code>url=</code> 解码，就能看到 <code>sceneId=3646</code>、<code>deliveryId=58298</code>、<code>activityId=100085</code>。</p>
 
 <h2>五、常见问题</h2>
 
@@ -315,22 +506,38 @@ A: 1) 确认手机系统是鸿蒙 2/3/4.x（AOSP 兼容版）<br>
 2) 鸿蒙 7.0（纯血）没有 logcat，需用 hdc<br>
 3) 操作淘宝时 cmd 窗口保持开启，别关掉</p>
 
+<p><b>Q: 支付宝的 orderDeliveryId 为什么 ADB 抓不到？</b><br>
+A: 它是活动页的配置项，不走 App 日志；dumpsys 和 uiautomator 也读不到 WebView 内部的 URL。用第四节的页面源码方式。</p>
+
+<p><b>Q: findstr 在 farm.html 里什么都没搜到？</b><br>
+A: 1) 确认解码后的地址是 <code>pages.tmall.com</code> 或 <code>pages-fast.m.taobao.com</code> 的 <code>wow/z/</code> 活动页<br>
+2) 部分活动不是 SSR 渲染，改用浏览器 F12 打印 <code>window.$data</code><br>
+3) 检查下载的 html 大小（几 KB 说明被拦或跳转了）</p>
+
+<p><b>Q: curl 提示不是内部或外部命令？</b><br>
+A: Windows 10 1803 以上自带 curl。老系统去装 curl，或直接用浏览器打开页面另存为 html。</p>
+
 <p><b>Q: cmd 一闪就关了？</b><br>
 A: 别双击 cmd 启动，开始菜单搜「cmd」→ 回车打开，再 cd 到对应目录。</p>
 
-<h2>六、目标链接示例（参考）</h2>
+<h2>六、目标链接示例（按入口分开看）</h2>
 
-<p>抓到的目标 URL 大致长这样，里面就有 sceneId 和 deliveryId：</p>
+<p><span class="tag-a">入口 A · 淘宝</span> 抓到的 URL 大致长这样，里面有 sceneId 和 deliveryId：</p>
 <div class="code-block" onclick="copyCode(this)">https://pages-fast.m.taobao.com/wow/z/app/ltao-fe/tbms-cooperation/home?ut_sk=...&deliveryId=75085&...&sceneId=7980&...</div>
+
+<p><span class="tag-b">入口 B · 支付宝</span> 活动页 HTML 里挖出来的是任务配置，不是 URL 参数：</p>
+<div class="code-block" onclick="copyCode(this)">"shareType":"BABAFarm","visitDeliveryId":"104321","orderDeliveryId":"104283","visitSceneId":"10021","orderSceneId":"10021","orderTaskCode":"alipay_live_order_task_high"</div>
 
 <h2>关键提示</h2>
 
 <ul>
-  <li>抓取期间手机别熄屏太久（Wi-Fi 可能断）</li>
+  <li><b>先定入口</b>：淘宝/天猫走 ADB（第三节），支付宝农场/助农走页面源码（第四节）</li>
+  <li>抓 ADB 期间手机别熄屏太久（Wi-Fi 可能断）</li>
   <li>每点一次按钮，cmd 会实时输出，盯着窗口看</li>
-  <li>方式 C 最稳，事后用 findstr 检索</li>
-  <li>抓完日志文件可能很大（几十 MB），用 findstr 过滤后只剩几 KB</li>
-  <li>sceneId / deliveryId 是活动 ID，每次活动不同</li>
+  <li>ADB 方式 C 最稳，事后用 findstr 检索</li>
+  <li>支付宝方式不用设备、不用 root，一条 curl 就够</li>
+  <li>活动页路径和 ID 每期活动都会变，以当次分享链展开结果为准</li>
+  <li>sceneId / deliveryId / orderDeliveryId 是活动常量，不是用户归因</li>
 </ul>
 
 <script>
