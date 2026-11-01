@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>方案四 PC浏览器F12登录态抓取 - 完整步骤</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f5f5f5;
+    color: #333;
+    line-height: 1.7;
+    padding: 20px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  h1 {
+    text-align: center;
+    color: #2c3e50;
+    border-bottom: 3px solid #e67e22;
+    padding-bottom: 15px;
+  }
+  h2 {
+    color: #2c3e50;
+    background: #ecf0f1;
+    padding: 12px 18px;
+    border-left: 5px solid #e67e22;
+    margin-top: 40px;
+    border-radius: 4px;
+  }
+  h3 {
+    color: #34495e;
+    margin-top: 25px;
+    padding-left: 10px;
+    border-left: 3px solid #95a5a6;
+  }
+  p { margin: 10px 0; }
+  ul, ol { margin: 10px 0; padding-left: 25px; }
+  li { margin: 5px 0; }
+  .code-block {
+    background: #2d2d2d;
+    color: #a6e22e;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-family: "Consolas", "Monaco", "Courier New", monospace;
+    font-size: 14px;
+    margin: 10px 0;
+    word-break: break-all;
+    white-space: pre-wrap;
+    border-left: 4px solid #a6e22e;
+  }
+  .warn {
+    background: #fff3e0;
+    border-left: 5px solid #e67e22;
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin: 12px 0;
+  }
+  .ok {
+    background: #e8f5e9;
+    border-left: 5px solid #27ae60;
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin: 12px 0;
+  }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; background: #fff; }
+  th, td { border: 1px solid #ccc; padding: 8px 10px; text-align: left; font-size: 14px; }
+  th { background: #34495e; color: #fff; }
+  tr:nth-child(even) { background: #f9f9f9; }
+  .tag-ok { color: #27ae60; font-weight: bold; }
+  .tag-no { color: #c0392b; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<h1>方案四 · PC 浏览器 F12 登录态抓取<br>（淘宝系活动任务参数）</h1>
+
+<p><strong>一句话定位：</strong>不用手机连线、不用抓包工具。PC Chrome 用手机仿真 + 淘宝登录态直接打开活动页，F12 看网络请求，HAR 导出后本地解析——目前唯一能<strong>读到任务接口完整响应</strong>的方法。</p>
+
+<h2>〇、先看能力边界（是否适用你的目标活动）</h2>
+
+<table>
+  <tr><th>活动</th><th>任务引擎</th><th>PC 能读?</th><th>PC 能做任务?</th><th>说明</th></tr>
+  <tr><td>芭芭农场任务列表（搜索/互动/浏览）</td><td>pentaprism</td><td class="tag-ok">✅</td><td class="tag-no">❌</td><td>queryitem 响应完整可读</td></tr>
+  <tr><td>专供会场 / 品牌周 / C2M 店铺页</td><td>pentaprism</td><td class="tag-ok">✅</td><td class="tag-no">❌</td><td>同上</td></tr>
+  <tr><td>拍拍乐（paipaile）</td><td>paipaile.echange</td><td class="tag-no">❌</td><td class="tag-no">❌</td><td>端内锁：FAIL_SYS_UNAUTHORIZED_ENTRANCE</td></tr>
+  <tr><td>摇钱树（moneytree）</td><td>yaoqianshu</td><td class="tag-no">❌</td><td class="tag-no">❌</td><td>端内锁，同上</td></tr>
+  <tr><td>支付宝全系（金豆/农场）</td><td>端内 RPC</td><td class="tag-no">❌</td><td class="tag-no">❌</td><td>XRiver 容器 + mgw 证书固定，只能用方案一入口二</td></tr>
+</table>
+
+<div class="warn"><strong>「PC 能读 ≠ 能做任务」：</strong>所有写入操作（trigger 领进度、settle 结算）在 PC 一律被风控拒绝，报 REQUEST_SOURCE_REJECT / BIZ_FAIL_NO_SAFE / -1002「大家太热情了」。本方案的用途是<strong>看参数、看规则、看次数</strong>，做任务还是要回手机。</div>
+
+<h2>一、准备（2 分钟）</h2>
+
+<ol>
+  <li>PC 最新版 Chrome（Edge 也可，F12 操作相同）</li>
+  <li>一个登录过手机淘宝的账号</li>
+</ol>
+
+<h2>二、核心七步</h2>
+
+<h3>第 1 步：登录淘宝 PC 站</h3>
+<p>打开 <span class="code-block">https://www.taobao.com</span> → 左上角「亲，请登录」→ 手机淘宝扫码登录。登录态会带到所有 *.m.taobao.com 子域。</p>
+
+<h3>第 2 步：切手机仿真</h3>
+<p>按 <strong>Ctrl + Shift + M</strong>（设备工具栏），顶部下拉随便选一个手机机型（如 iPhone SE），页面自动按手机版渲染。切完按 F5 刷新一次。</p>
+
+<h3>第 3 步：打开 F12 Network</h3>
+<p>按 <strong>F12</strong> → 切到 <strong>Network</strong> 标签。建议先把两个勾打上：</p>
+<ul>
+  <li><strong>Preserve log</strong>（保留日志）—— 跳转后记录不清空</li>
+  <li><strong>Disable cache</strong>（禁用缓存）—— 保证请求重新发出</li>
+</ul>
+
+<h3>第 4 步：粘贴活动链接打开</h3>
+<p>把任务加载链接粘到地址栏回车。链接来源（三选一）：</p>
+<ul>
+  <li><strong>方案一入口一</strong>：手机 logcat 抓到的任务 URL，直接搬过来</li>
+  <li><strong>页面跳转链接</strong>：F12 Network 里右键请求 → Copy → Copy link address</li>
+  <li><strong>会场全局搜索</strong>：F12 里 Ctrl+Shift+F 打开 Search 面板，搜 <span class="code-block">deliveryId</span>，双击结果直达</li>
+</ul>
+
+<h3>第 5 步：触发任务请求</h3>
+<p>页面出来后，点击任务卡片、商品、或直接 F5 刷新——观察 Network 里出现：</p>
+<div class="code-block">queryitem   ← 任务详情（重点，含次数和奖励规则）
+scene.query ← 任务列表（一次返回全部任务）
+trigger / award / report  ← 做任务/领奖（PC 会被拒，看参数够用）</div>
+
+<h3>第 6 步：看单条响应</h3>
+<p>过滤框输入 <span class="code-block">queryitem</span> → 点中请求 → 右侧 <strong>Response</strong>（或 Preview）面板直接读 JSON。想复制全文：右键请求 → Copy → Copy response。</p>
+
+<h3>第 7 步：导出全量 HAR</h3>
+<p>Network 面板空白处右键（或点 ⬇ 图标）→ <strong>Save all as HAR with content</strong>。得到 .har / .devtools 文件，发给电脑上的 Python 解析。</p>
+
+<div class="warn"><strong>灰色请求点不开？</strong>那是录制开始前发生的请求或缓存。解决：勾 Preserve log + Disable cache 后 F5，让请求重新发一遍。</div>
+
+<h2>三、HAR 本地解析（Python 脚本）</h2>
+
+<p>导出的 .devtools / .har 文件本质是 JSON，直接解析。下面脚本一键提取全部任务档案：</p>
+
+<div class="code-block">import json, re, sys
+
+f = sys.argv[1]                     # python3 parse_har.py 123.devtools
+d = json.load(open(f, encoding="utf-8", errors="ignore"))
+entries = d["log"]["entries"]
+
+for e in entries:
+    u = e["request"]["url"]
+    if "queryitem" not in u.lower() and "scene.query" not in u.lower():
+        continue
+    t = e["response"].get("content", {}).get("text", "")
+    for m in re.finditer(r'\{"id":(\d+)[^\{\}]*?"taskParams":\{[^}]*\}', t):
+        print(m.group(0)[:500])
+    # 次数与奖励
+    for m in re.finditer(r'"progress":\{[^}]*\}', t):
+        print(m.group(0))
+    for m in re.finditer(r'"displayAwardMode":\{[^}]*\}', t):
+        print(m.group(0))</div>
+
+<h2>四、queryitem 响应字段解读（核心）</h2>
+
+<table>
+  <tr><th>字段</th><th>含义</th><th>注意</th></tr>
+  <tr><td>id</td><td>deliveryId，任务钥匙</td><td>结算归因用</td></tr>
+  <tr><td>taskParams.sceneId</td><td>场景钥匙</td><td>和 deliveryId 成对</td></tr>
+  <tr><td>taskParams.fromToken</td><td>按次签发的会话凭证</td><td><strong>会轮换</strong>，不是常量</td></tr>
+  <tr><td>taskParams.implId</td><td>实例 ID</td><td>格式 other_&lt;period&gt;_&lt;用户/0&gt;_&lt;deliveryId&gt;_&lt;序号&gt;；cloudsail_ 前缀 = 广告按次下发，每次都变</td></tr>
+  <tr><td>progress.maxTimes / needTimes / times</td><td>每日上限 / 完成所需 / 已完成</td><td>每日次数看这里</td></tr>
+  <tr><td>rewards[].result.displayAwardMode</td><td>奖励引擎上限 {max, min}</td><td>比实际展示大，如肥料 300000 vs 100000</td></tr>
+  <tr><td>rewards[].result.displayMaxCount</td><td>当前档位奖励</td><td>页面说的「最高得」</td></tr>
+  <tr><td>groupId / configId</td><td>配置族 / 配置号</td><td>同 groupId = 同配置孪生实例（如 75081/75085/93820 同为 34832）</td></tr>
+  <tr><td>nextTaskList / secondTaskInfo</td><td>服务端把下一个任务写进响应</td><td>顺藤摸瓜拿新 deliveryId</td></tr>
+  <tr><td>bucketNo</td><td>动态规则版本号</td><td>如 farmDynamicRuleVer4</td></tr>
+  <tr><td>taskSubType</td><td>ONCE / 每日循环等</td><td></td></tr>
+</table>
+
+<h3>URL 参数解读</h3>
+<table>
+  <tr><th>参数</th><th>含义</th></tr>
+  <tr><td>ptsm=order.&lt;sceneId&gt;.&lt;deliveryId&gt;</td><td>主任务→下单任务的绑定链（互动/搜索任务背后暗挂的下单归因）</td></tr>
+  <tr><td>spma / spmb</td><td>SPM 埋点位（如 farm / xsmszywlq），<strong>只统计流量，不参与结算</strong></td></tr>
+  <tr><td>bucketNo / hdSecurity / orderTask</td><td>规则版本 / 风控标记 / 下单任务标记</td></tr>
+  <tr><td>pid</td><td>淘宝客佣金位</td></tr>
+</table>
+
+<h2>五、pentaprism 接口族速查</h2>
+
+<div class="code-block">mtop.taobao.pentaprism.scene.query      ← 任务列表（一次拿全部任务）
+mtop.taobao.pentaprism.scene.queryItem  ← 任务详情（次数/奖励/凭证）
+mtop.taobao.pentaprism.scene.receive    ← 接任务
+mtop.taobao.pentaprism.scene.trigger    ← 做任务（进度+1，PC 被拒）
+mtop.taobao.pentaprism.scene.award      ← 领奖
+mtop.taobao.pentaprism.scene.report     ← 行为上报
+mtop.taobao.pentaprism.scene.queryClick ← 点击流归因
+
+状态机：receive 接单 → trigger 做任务(每次+1) → award 领奖</div>
+
+<h3>报错码对照</h3>
+<table>
+  <tr><th>报错</th><th>真实含义</th></tr>
+  <tr><td>REQUEST_SOURCE_REJECT: h5 request forbidden</td><td>PC 写入被拒（trigger）</td></tr>
+  <tr><td>BIZ_FAIL_NO_SAFE:: 网络拥堵，请稍后再试</td><td>风控委婉话术，同上</td></tr>
+  <tr><td>-1002:: 大家太热情了，请稍后再试</td><td>settle 结算被风控</td></tr>
+  <tr><td>FAIL_SYS_UNAUTHORIZED_ENTRANCE:: API访问入口未授权</td><td>端内专属接口，PC 读都锁死（拍拍乐/摇钱树）</td></tr>
+</table>
+
+<h2>六、配套方法（同一套 F12）</h2>
+
+<ul>
+  <li><strong>JS 逆向</strong>：Network 里点 JS 请求 → 响应直接 Copy 存本地，全局搜 mtop 接口名 / deliveryId，可挖出页面没发的接口清单（如 pentaprism 五件套就是从 c2m_shop.js 的枚举表里挖到的）。alicdn 上的 JS 是公开 CDN，curl 可直接下载。</li>
+  <li><strong>拿「其他」任务</strong>：会场里每换一个任务卡片，过滤 queryitem，响应里的 deliveryId + secondTaskDeliveryId 就是当页全部钥匙。</li>
+  <li><strong>拍拍乐/摇钱树/支付宝</strong>：本方案失效，改走手机端（logcat 抓端内跳转 URL，见方案一入口一；支付宝页面源码，见方案一入口二）。</li>
+</ul>
+
+<h2>七、常见坑速查</h2>
+
+<ol>
+  <li>Network 请求灰色不可点 → 勾 Preserve log + Disable cache，F5 重放</li>
+  <li>导出的 .devtools 打不开 → 它就是 HAR JSON，用 Python json.load 直接读</li>
+  <li>fromToken 每次不一样 → 正常，按次签发；拿它构造链接要现抓现用</li>
+  <li>页面奖励数字很大 → 那是引擎上限，实际「以获得为准」，看 displayMaxCount</li>
+  <li>同一个任务两个卡片 → 可能是同配置孪生实例（同 groupId 不同 deliveryId），也可能真是两个任务，看跳转 URL 里的 deliveryId 是否相同</li>
+  <li>implId 带 cloudsail_ 前缀 → 广告按次下发，每次都不一样，别当常量记录</li>
+</ol>
+
+</body>
+</html>
