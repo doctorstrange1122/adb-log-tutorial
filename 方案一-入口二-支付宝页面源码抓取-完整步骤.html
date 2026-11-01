@@ -205,13 +205,15 @@
 <div class="result-block">https://render.alipay.com/p/c/xxxxxxxxxxxxxxxx/share.html?scheme=...&shareToken=...</div>
 
 <p>把它展开成真实落地地址（电脑 cmd 执行，链接换成你自己的）：</p>
-<div class="code-block" onclick="copyCode(this)">curl -sL -w "\nFINAL=%{url_effective}\n" -A "Mozilla/5.0 (Linux; Android 12; PCT-AL10) AppleWebKit/537.36 Chrome/120.0 Mobile AlipayGphone/10.5.76" "这里换成你自己的支付宝短链"</div>
+<div class="code-block" onclick="copyCode(this)">curl -sL -o NUL -w "FINAL=%{url_effective}" -A "Mozilla/5.0 (Linux; Android 12; PCT-AL10) AppleWebKit/537.36 Chrome/120.0 Mobile AlipayGphone/10.5.76" "这里换成你自己的支付宝短链"</div>
 
 <div class="note">
 <b>必须在 cmd 里直接执行</b>（不要写成 .bat 批处理），因为 <code>%{url_effective}</code> 在批处理里会被当成变量，需要写成 <code>%%</code>。
+<br><br>
+<b>为什么用 <code>-o NUL</code></b>：curl 会把 render.alipay.com 整个 HTML 页面吐到屏幕上，长几千行，cmd 窗口缓冲区装不下会把末尾（FINAL=）截掉。<code>-o NUL</code> 把 HTML body 直接扔掉，屏幕上只剩干净的 FINAL= 一行。
 </div>
 
-<p>命令执行完，<b>curl 输出里会混一堆 render.alipay.com 的 HTML 代码</b>，不用管，只找最后一行以 <code>FINAL=</code> 开头的。FINAL= 后面那整串就是落地协议。</p>
+<p>命令执行完，<b>屏幕上只会有一行以 <code>FINAL=</code> 开头的内容</b>，就是落地协议，直接复制就行，不用在一堆 script 代码里找。</p>
 <p>FINAL= 后通常有两种样子：</p>
 
 <p><b>样子 A（单层编码，简单）</b>：</p>
@@ -347,8 +349,14 @@ A: <b>URL 粘错了</b>。你大概率把 render.alipay.com 的分享页地址�
 回到 Step 2.2 跑 powershell 解码，<b>解码结果的域名必须是 <code>pages.tmall.com</code> 或 <code>pages-fast.m.taobao.com</code></b>，把那串明文粘进 curl。绝对不能粘 render.alipay.com。
 </p>
 
-<p><b>Q: curl 输出里混一堆 &lt;script&gt; 堆，找不到 FINAL= 那行？</b><br>
-A: 分享链是 render.alipay.com 类型就会这样。它本身是分享中间页，curl 跟进跳转后拿到的是分享页 HTML，FINAL= 追加在最后。<b>滚动到输出最末尾</b>，最后一行就是 FINAL=。如果完全没 FINAL=，说明你没加 <code>-w "\nFINAL=%{url_effective}\n"</code> 那个参数。
+<p><b>Q: 跑完 curl 屏幕上什么都没有？</b><br>
+A: 1) 确认短链粘对了（<code>codeapp.alipay.com</code> / <code>ur.alipay.com</code> / <code>render.alipay.com</code> 这些域名）<br>
+2) Windows curl 有时候网络请求比较慢，等 10 秒左右<br>
+3) 如果完全没输出，试试去掉 <code>-s</code> 参数让它显示进度
+</p>
+
+<p><b>Q: 屏幕上还是出现一堆 &lt;script&gt; 代码混在 FINAL= 前面？</b><br>
+A: 你用的命令里没加 <code>-o NUL</code>。回 Step 2.1 用新版命令，<code>-o NUL</code> 把 render.alipay.com 的 HTML body 直接扔掉，屏幕上只剩干净的一行 FINAL=。老教程用的 <code>-o xxx.html</code> 或没 -o 参数，会把 HTML 打到屏幕上。
 </p>
 
 <p><b>Q: 为什么 ADB 抓不到 orderDeliveryId？</b><br>
