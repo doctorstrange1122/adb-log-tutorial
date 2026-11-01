@@ -71,7 +71,7 @@
 <h1>ADB 抓取日志完整教程</h1>
 
 <p style="text-align:center; color:#7f8c8d;">
-三种方案，根据你的手机型号和场景选择
+四种方案：方案一二三在手机端抓日志，方案四用电脑浏览器直接看接口
 </p>
 
 <div class="card">
@@ -98,33 +98,51 @@
   <a href="方案三-原生安卓手机自抓自-完整步骤.html">查看完整步骤 →</a>
 </div>
 
-<h2 style="margin-top:40px;">三套方案对比</h2>
+<div class="card">
+  <h2>方案四：PC 浏览器 F12 登录态抓取 <span class="badge">最新</span></h2>
+  <p><b>适用场景</b>：淘宝系活动任务参数（芭芭农场 / 专供会场 / 品牌周 / C2M 等 pentaprism 体系）</p>
+  <p><b>系统要求</b>：只需 PC Chrome + 淘宝账号扫码登录，<b>不用连手机</b></p>
+  <p><b>特点</b>：手机仿真 + F12 看 queryitem 响应 + HAR 导出解析，能读每日次数、奖励规则、deliveryId 全套钥匙；注意只能「读」不能「做任务」（trigger 被风控拒），拍拍乐/摇钱树/支付宝不适用</p>
+  <a href="方案四-PC浏览器F12登录态抓取-完整步骤.html">查看完整步骤 →</a>
+</div>
+
+<h2 style="margin-top:40px;">四套方案对比</h2>
 <table style="width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden;">
   <tr style="background:#34495e; color:white;">
     <th style="padding:12px; text-align:left;">方案</th>
-    <th style="padding:12px; text-align:left;">适用机型</th>
+    <th style="padding:12px; text-align:left;">适用机型/场景</th>
     <th style="padding:12px; text-align:left;">需要电脑</th>
-    <th style="padding:12px; text-align:left;">重启后</th>
+    <th style="padding:12px; text-align:left;">需要手机</th>
   </tr>
   <tr style="border-bottom:1px solid #ecf0f1;">
     <td style="padding:12px;">方案一</td>
     <td style="padding:12px;">任意能 USB 调试</td>
     <td style="padding:12px;">✅ 必须</td>
-    <td style="padding:12px;">重插 USB</td>
+    <td style="padding:12px;">✅ USB 连接</td>
   </tr>
   <tr style="border-bottom:1px solid #ecf0f1;">
     <td style="padding:12px;">方案二</td>
     <td style="padding:12px;">鸿蒙 2/3/4.x</td>
     <td style="padding:12px;">⚠️ 仅激活一次</td>
-    <td style="padding:12px;">必须回电脑激活</td>
+    <td style="padding:12px;">✅ 激活后独立抓</td>
   </tr>
-  <tr>
+  <tr style="border-bottom:1px solid #ecf0f1;">
     <td style="padding:12px;">方案三</td>
     <td style="padding:12px;">Android 11+</td>
     <td style="padding:12px;">❌ 不用</td>
-    <td style="padding:12px;">直接重连</td>
+    <td style="padding:12px;">✅ 手机独立抓</td>
+  </tr>
+  <tr>
+    <td style="padding:12px;">方案四</td>
+    <td style="padding:12px;">淘宝系活动（不限机型）</td>
+    <td style="padding:12px;">✅ 全程</td>
+    <td style="padding:12px;">❌ 不用（仅扫码登录一次）</td>
   </tr>
 </table>
+
+<p style="color:#7f8c8d; margin-top:12px;">
+💡 方案一二三抓的是<b>手机端日志</b>（URL 入口）；方案四抓的是<b>接口完整响应</b>（次数/奖励/凭证）。实战组合：手机抓任务 URL（方案一）→ 电脑打开链接看响应（方案四）。
+</p>
 
 <p style="text-align:center; color:#95a5a6; margin-top:40px;">
 仓库地址：<a href="https://github.com/doctorstrange1122/adb-log-tutorial">github.com/doctorstrange1122/adb-log-tutorial</a>
