@@ -255,24 +255,29 @@
 <p>确认文件拿到（正常 200 KB 左右）：</p>
 <div class="code-block" onclick="copyCode(this)">dir E:\alipay-crawler\farm.html</div>
 
-<h3>2.4 查参数（一条命令出结果）</h3>
+<h3>2.4 查参数（干净输出，一行一个）</h3>
 
-<div class="code-block" onclick="copyCode(this)">findstr /i "orderDeliveryId visitDeliveryId visitSceneId orderSceneId shareType orderTaskCode" E:\alipay-crawler\farm.html</div>
+<div class="warn">
+<b>不要用 findstr</b>：参数埋在单行几万字符的 <code>&lt;script&gt;window.$data = { ...taskConfig:... }&lt;/script&gt;</code> JSON 里，findstr 会把整行全吐出来刷屏，看不清。用下面这条 powershell 干净摘：
+</div>
 
-<p>一次查全部任务配置：</p>
-<div class="code-block" onclick="copyCode(this)">findstr /i "taskConfig" E:\alipay-crawler\farm.html</div>
+<div class="code-block" onclick="copyCode(this)">powershell -NoProfile -Command "$c=Get-Content 'E:\alipay-crawler\farm.html' -Raw; foreach($k in @('orderDeliveryId','visitDeliveryId','visitSceneId','orderSceneId','shareType','orderTaskCode')){ if($c -match \"`\"$k`\":`\"([^`\"]+)`\"\"){ Write-Host \"$k = $($Matches[1])\" } }"</div>
 
-<p>结果太长就导出成单独文件再看：</p>
-<div class="code-block" onclick="copyCode(this)">findstr /i "orderDeliveryId visitDeliveryId visitSceneId" E:\alipay-crawler\farm.html > E:\alipay-crawler\delivery-id.txt</div>
+<p>输出长这样（比对，<b>不要复制</b>）：</p>
+<div class="result-block">orderDeliveryId = 104283
+visitDeliveryId = 104321
+visitSceneId = 10021
+orderSceneId = 10021
+shareType = BABAFarm
+orderTaskCode = alipay_live_order_task_high</div>
+
+<p>想保存到文件方便看：</p>
+<div class="code-block" onclick="copyCode(this)">powershell -NoProfile -Command "$c=Get-Content 'E:\alipay-crawler\farm.html' -Raw; foreach($k in @('orderDeliveryId','visitDeliveryId','visitSceneId','orderSceneId','shareType','orderTaskCode')){ if($c -match \"`\"$k`\":`\"([^`\"]+)`\"\"){ \"$k = $($Matches[1])\" } }" > E:\alipay-crawler\delivery-id.txt</div>
 
 <div class="code-block" onclick="copyCode(this)">notepad E:\alipay-crawler\delivery-id.txt</div>
 
 <div class="tip">
-<b>实测结果（当前这版助农活动页）</b><br>
-<code>orderDeliveryId=104283</code>（下单任务）<br>
-<code>visitDeliveryId=104321</code>（浏览/到访任务）<br>
-<code>visitSceneId=10021</code>、<code>orderSceneId=10021</code><br>
-<code>shareType=BABAFarm</code>、<code>orderTaskCode=alipay_live_order_task_high</code>
+<b>原理</b>：用 PowerShell 正则 <code>"key":"value"</code> 精准匹配每个参数，只取 key 和 value，一行一个输出。farm.html 是 SSR 直接把 <code>window.$data</code> 内联进 HTML 的，所以直接正则抓就行，不用 JSON 解析。
 </div>
 
 <h3>2.5 备用做法：浏览器直接看（手机也能用）</h3>
@@ -363,9 +368,8 @@ A: 你用的命令里没加 <code>-o NUL</code>。回 Step 2.1 用新版命令�
 A: 它是活动页配置项，不走 App 日志；dumpsys 和 uiautomator 也读不到 WebView 内部 URL。按本页方法抓页面源码。</p>
 
 <p><b>Q: findstr 在 farm.html 里什么都没搜到？</b><br>
-A: 1) 确认解码后的地址是 <code>pages.tmall.com</code> / <code>pages-fast.m.taobao.com</code> 的 <code>wow/z/</code> 活动页<br>
-2) 部分活动不是 SSR 渲染，改用浏览器 F12 打印 <code>window.$data</code><br>
-3) 看下载的 html 大小，几 KB 说明被拦或跳转了</p>
+A: 不用 findstr。参数是 JSON 格式，<b>直接用 Step 2.4 的 powershell 命令</b>干净摘出来。findstr 适合普通文本，单行超长 JSON 会把整行刷屏，还容易报「写入错误」。
+</p>
 
 <p><b>Q: curl 提示不是内部或外部命令？</b><br>
 A: Windows 10 1803 以上自带 curl。老系统直接浏览器打开页面另存为 html 也行。</p>
