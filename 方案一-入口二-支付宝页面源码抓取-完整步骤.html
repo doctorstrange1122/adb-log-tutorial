@@ -227,7 +227,7 @@
 
 <p>两种样子都用同一条命令，把 FINAL= 后面那整串粘进去（<b>注意是 FINAL= 后的整串，从 alipays:// 或 https://render.alipay.com 开头一直到末尾</b>）：</p>
 
-<div class="code-block" onclick="copyCode(this)">powershell -NoProfile -Command "$raw='这里粘 FINAL= 后面那整串'; $h=[regex]::Replace($raw,'%([0-9A-Fa-f]{2})',{param($m)[char][int]$m.Groups[1].Value}); $u=[regex]::Match($h,'url=([^&]+)').Groups[1].Value; [uri]::UnescapeDataString($u)"</div>
+<div class="code-block" onclick="copyCode(this)">powershell -NoProfile -Command "$raw='这里粘 FINAL= 后面那整串'; $h=[regex]::Replace($raw,'%([0-9A-Fa-f]{2})',{param($m)[char][Convert]::ToInt32($m.Groups[1].Value,16)}); $u=[regex]::Match($h,'url=([^&]+)').Groups[1].Value; [uri]::UnescapeDataString($u)"</div>
 
 <div class="tip">
 <b>这条命令自动处理两层编码</b>：先把所有 <code>%XX</code> 还原成字符（解决 render.alipay.com 那种 hex escape），再从里面抠 <code>url=...</code> 那段，最后解一次 percent-encoding。
